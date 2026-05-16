@@ -14,6 +14,7 @@
 // Re-export all database types for convenient access
 export type {
   Database,
+  Json,
   ClinicRow,
   ClinicInsert,
   ClinicUpdate,
@@ -72,10 +73,10 @@ export interface ResponseMeta {
 
 /** Structured API error following RFC 7807 Problem Details. */
 export interface ApiError {
-  code:    string;         // Machine-readable error code (e.g., 'UNAUTHORIZED')
-  message: string;         // Human-readable error message
-  details?: unknown;       // Optional additional context (never include PII)
-  field?:   string;        // For validation errors — the offending field name
+  code:     string;                // Machine-readable error code (e.g., 'UNAUTHORIZED')
+  message:  string;                // Human-readable error message
+  details?: unknown;               // Optional additional context (never include PII)
+  field?:   string | undefined;    // For validation errors — the offending field name
 }
 
 // ---------------------------------------------------------------------------
