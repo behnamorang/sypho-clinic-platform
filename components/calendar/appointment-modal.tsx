@@ -16,7 +16,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { updateAppointmentStatusAction } from '@/app/(dashboard)/calendar/actions';
+import { updateAppointmentStatusAction } from '@/app/(dashboard)/dashboard/calendar/actions';
 import { formatTime, formatDuration }    from '@/lib/utils/date';
 import type { AppointmentWithRelations } from '@/types/calendar';
 import type { AppointmentStatus }        from '@/database/types/database.types';

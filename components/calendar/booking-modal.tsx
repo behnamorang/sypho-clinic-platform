@@ -17,7 +17,7 @@
 'use client';
 
 import { useState, useTransition, useRef, useEffect } from 'react';
-import { createAppointmentAction }  from '@/app/(dashboard)/calendar/actions';
+import { createAppointmentAction }  from '@/app/(dashboard)/dashboard/calendar/actions';
 import { buildLocalISO }            from '@/lib/utils/date';
 import type { CalendarPatient, CalendarDoctor, CalendarAppointmentType } from '@/types/calendar';
 

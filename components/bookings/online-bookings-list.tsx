@@ -17,11 +17,11 @@
 
 import { useState, useCallback, useTransition } from 'react';
 import Link                                      from 'next/link';
-import { confirmBooking, cancelBooking }         from '@/app/(dashboard)/bookings/actions';
+import { confirmBooking, cancelBooking }         from '@/app/(dashboard)/dashboard/bookings/actions';
 import type {
   BookingStatusFilter,
   OnlineBookingRow,
-}                                               from '@/app/(dashboard)/bookings/page';
+}                                               from '@/app/(dashboard)/dashboard/bookings/page';
 import type { UserRole }                        from '@/database/types/database.types';
 
 // ---------------------------------------------------------------------------

@@ -38,7 +38,7 @@ import {
   rescheduleAppointmentAction,
   resizeAppointmentAction,
   fetchAppointmentsForRange,
-} from '@/app/(dashboard)/calendar/actions';
+} from '@/app/(dashboard)/dashboard/calendar/actions';
 
 import {
   addDays,
