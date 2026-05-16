@@ -16,6 +16,10 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getAuthenticatedUser, getClinicMembership } from '@/lib/auth/helpers';
 import { Sidebar }                   from '@/components/layout/sidebar';
 
+// Opt out of build-time prerendering — this layout fetches the auth session
+// at runtime via cookies(), making it always dynamic.
+export const dynamic = 'force-dynamic';
+
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }

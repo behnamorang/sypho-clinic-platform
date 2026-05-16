@@ -37,6 +37,15 @@ import type { Database }                            from '@/database/types/datab
 function requireEnvVar(name: string): string {
   const value = process.env[name];
   if (!value) {
+    // During `next build`, Next.js prerenders all pages (even dynamic ones) to
+    // collect metadata. Env vars may not be available in that pass.
+    // NEXT_PHASE is set to 'phase-production-build' during `next build`.
+    // We return a safe placeholder so the Supabase client is instantiated but
+    // never used (actual requests are always server-rendered on demand).
+    const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build';
+    if (isBuildPhase) {
+      return '__build_placeholder__';
+    }
     throw new Error(
       `[Supabase] Missing required environment variable: ${name}. ` +
       'Ensure this is set in your .env.local file or deployment environment.'

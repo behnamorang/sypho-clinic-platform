@@ -19,6 +19,8 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getAuthenticatedUser, hasCompletedOnboarding } from '@/lib/auth/helpers';
 import { OnboardingWizard }           from '@/components/onboarding/onboarding-wizard';
 
+export const dynamic = 'force-dynamic';
+
 export const metadata: Metadata = {
   title: 'Set up your clinic — Sypho',
   description: 'Complete your clinic profile to start using Sypho.',
