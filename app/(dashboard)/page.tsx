@@ -38,11 +38,12 @@ export default async function DashboardPage() {
   const membership       = membershipResult.ok ? membershipResult.data : null;
 
   // Fetch clinic details.
-  let clinicName:     string | null = null;
-  let totalPatients:  number        = 0;
-  let totalDoctors:   number        = 0;
-  let todayAppts:     number        = 0;
-  let pendingAppts:   number        = 0;
+  let clinicName:        string | null = null;
+  let totalPatients:     number        = 0;
+  let totalDoctors:      number        = 0;
+  let todayAppts:        number        = 0;
+  let pendingAppts:      number        = 0;
+  let pendingOnline:     number        = 0;
 
   if (membership) {
     const clinicId = membership.clinic_id;
@@ -53,7 +54,7 @@ export default async function DashboardPage() {
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
 
-    const [clinicResRaw, patientsRes, doctorsRes, todayRes, pendingRes] = await Promise.all([
+    const [clinicResRaw, patientsRes, doctorsRes, todayRes, pendingRes, onlineRes] = await Promise.all([
       supabase
         .from('clinics')
         .select('name')
@@ -86,14 +87,24 @@ export default async function DashboardPage() {
         .eq('clinic_id', clinicId)
         .is('deleted_at', null)
         .eq('status', 'pending'),
+
+      // Pending online bookings — require clinic staff review
+      supabase
+        .from('appointments')
+        .select('id', { count: 'exact', head: true })
+        .eq('clinic_id', clinicId)
+        .is('deleted_at', null)
+        .eq('booked_via', 'online')
+        .eq('status', 'pending'),
     ]);
 
     const clinicRes = clinicResRaw as { data: { name: string } | null; error: unknown };
-    clinicName    = clinicRes.data?.name ?? null;
-    totalPatients = patientsRes.count ?? 0;
-    totalDoctors  = doctorsRes.count  ?? 0;
-    todayAppts    = todayRes.count    ?? 0;
-    pendingAppts  = pendingRes.count  ?? 0;
+    clinicName     = clinicRes.data?.name ?? null;
+    totalPatients  = patientsRes.count  ?? 0;
+    totalDoctors   = doctorsRes.count   ?? 0;
+    todayAppts     = todayRes.count     ?? 0;
+    pendingAppts   = pendingRes.count   ?? 0;
+    pendingOnline  = onlineRes.count    ?? 0;
   }
 
   const displayName = (user.user_metadata['first_name'] as string | undefined)
@@ -126,11 +137,35 @@ export default async function DashboardPage() {
 
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Today's Appointments" value={todayAppts} icon={<CalendarIcon />} color="brand" />
-        <StatCard label="Pending Review"        value={pendingAppts} icon={<ClockIcon />}    color="warning" />
-        <StatCard label="Active Patients"       value={totalPatients} icon={<UsersIcon />}    color="accent" />
-        <StatCard label="Active Doctors"        value={totalDoctors}  icon={<DoctorIcon />}   color="success" />
+        <StatCard label="Today's Appointments" value={todayAppts}     icon={<CalendarIcon />}  color="brand" />
+        <StatCard label="Pending Review"       value={pendingAppts}   icon={<ClockIcon />}     color="warning" />
+        <StatCard label="Active Patients"      value={totalPatients}  icon={<UsersIcon />}     color="accent" />
+        <StatCard label="Active Doctors"       value={totalDoctors}   icon={<DoctorIcon />}    color="success" />
       </div>
+
+      {/* Online booking alert banner */}
+      {pendingOnline > 0 && (
+        <Link
+          href="/dashboard/bookings?status=pending"
+          className="flex items-center gap-3 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 mb-6 hover:bg-amber-100 transition-colors group"
+        >
+          <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+            <svg className="w-4 h-4 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round"
+                d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            </svg>
+          </div>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-amber-800">
+              {pendingOnline} online booking{pendingOnline !== 1 ? 's' : ''} awaiting confirmation
+            </p>
+            <p className="text-xs text-amber-600">Click to review and confirm patient bookings</p>
+          </div>
+          <svg className="w-4 h-4 text-amber-500 group-hover:translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+          </svg>
+        </Link>
+      )}
 
       {/* Quick access grid */}
       <h2 className="text-sm font-semibold text-surface-700 mb-4 uppercase tracking-wide">
@@ -228,6 +263,18 @@ const FEATURE_LINKS = [
     ),
   },
   {
+    href:        '/dashboard/bookings',
+    title:       'Online Bookings',
+    description: 'Review and manage patient appointments booked via your public booking portal.',
+    iconBg:      'bg-accent-50',
+    disabled:    false,
+    icon: (
+      <svg className="w-5 h-5 text-accent-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+      </svg>
+    ),
+  },
+  {
     href:        '/dashboard/patients',
     title:       'Patient Management',
     description: 'GDPR-compliant patient records with full rights management and audit trails.',
@@ -278,9 +325,9 @@ const FEATURE_LINKS = [
   {
     href:        '/dashboard/settings',
     title:       'Clinic Settings',
-    description: 'Manage clinic profile, business hours, team members, and billing.',
+    description: 'Manage clinic profile, booking link, GDPR/DPO details, and team members.',
     iconBg:      'bg-surface-100',
-    disabled:    true,
+    disabled:    false,
     icon: (
       <svg className="w-5 h-5 text-surface-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
         <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
