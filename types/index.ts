@@ -121,6 +121,21 @@ export interface DoctorDisplayName {
   initials:     string;  // e.g., "JS"
 }
 
+// Re-export calendar view types
+export type {
+  CalendarPatient,
+  CalendarDoctor,
+  CalendarAppointmentType,
+  AppointmentWithRelations,
+  CalendarView,
+  CalendarSlot,
+  DragState,
+  ResizeState,
+  OptimisticUpdate,
+  ActionResult,
+  CalendarInitialData,
+} from '@/types/calendar';
+
 // ---------------------------------------------------------------------------
 // CALENDAR / SCHEDULING
 // ---------------------------------------------------------------------------
