@@ -17,7 +17,7 @@ npm run type-check # TypeScript strict check (tsc --noEmit)
 
 ### Environment variables
 
-Copy `.env.example` to `.env.local`. The app requires Supabase credentials (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`) to perform authentication and database operations. With placeholder values, the dev server starts and all pages render, but auth/data flows will fail at runtime.
+The update script auto-generates `.env.local` from injected secrets (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`). Next.js requires `NEXT_PUBLIC_*` vars in `.env.local` — they cannot be read from process env alone because they must be inlined at compile time for client-side code. With placeholder values, the dev server starts and all pages render, but auth/data flows will fail at runtime.
 
 ### Key caveats
 
