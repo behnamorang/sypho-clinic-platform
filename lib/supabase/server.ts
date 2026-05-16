@@ -137,9 +137,9 @@ export function createSupabaseAdminClient() {
   return createClient<Database>(supabaseUrl, serviceRoleKey, {
     auth: {
       // Disable auto-refresh for server-side admin clients
-      autoRefreshToken: false,
-      persistSession:   false,
-      detectSessionFromUrl: false,
+      autoRefreshToken:    false,
+      persistSession:      false,
+      detectSessionInUrl:  false,
     },
   });
 }

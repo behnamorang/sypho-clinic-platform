@@ -83,7 +83,23 @@ export type BookingChannel = 'dashboard' | 'online' | 'phone' | 'walk_in' | 'api
 export type SubscriptionTier = 'free' | 'starter' | 'professional' | 'enterprise';
 
 // ---------------------------------------------------------------------------
-// JSONB SHAPE TYPES
+// JSON type — used for JSONB columns in Row types
+// Matches the Supabase-generated `Json` type for compatibility with
+// the `Record<string, unknown>` constraint on GenericTable.
+// ---------------------------------------------------------------------------
+
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | Json[]
+  | { [key: string]: Json };
+
+// ---------------------------------------------------------------------------
+// JSONB SHAPE TYPES — Application-layer typed overlays for JSONB columns.
+// These are used when you need to work with structured JSONB data.
+// Cast from `Json` when needed: `row.business_hours as WeeklySchedule`.
 // ---------------------------------------------------------------------------
 
 /** Business hours configuration for a clinic or doctor. */
@@ -93,20 +109,20 @@ export interface TimeSlot {
 }
 
 export interface DaySchedule {
-  open?: string;   // For clinic: "HH:MM"
-  close?: string;  // For clinic: "HH:MM"
-  closed?: boolean;
-  slots?: TimeSlot[]; // For doctor: array of available time ranges
+  open?: string | undefined;    // For clinic: "HH:MM"
+  close?: string | undefined;   // For clinic: "HH:MM"
+  closed?: boolean | undefined;
+  slots?: TimeSlot[] | undefined; // For doctor: array of available time ranges
 }
 
 export type WeeklySchedule = {
-  monday?:    DaySchedule;
-  tuesday?:   DaySchedule;
-  wednesday?: DaySchedule;
-  thursday?:  DaySchedule;
-  friday?:    DaySchedule;
-  saturday?:  DaySchedule;
-  sunday?:    DaySchedule;
+  monday?:    DaySchedule | undefined;
+  tuesday?:   DaySchedule | undefined;
+  wednesday?: DaySchedule | undefined;
+  thursday?:  DaySchedule | undefined;
+  friday?:    DaySchedule | undefined;
+  saturday?:  DaySchedule | undefined;
+  sunday?:    DaySchedule | undefined;
 };
 
 // ---------------------------------------------------------------------------
@@ -116,33 +132,34 @@ export type WeeklySchedule = {
 
 /** Represents a row in the `clinics` table. */
 export interface ClinicRow {
-  id:                   string;
-  name:                 string;
-  slug:                 string;
-  tax_id:               string | null;
-  registration_number:  string | null;
-  email:                string;
-  phone:                string | null;
-  website:              string | null;
-  address_line1:        string;
-  address_line2:        string | null;
-  city:                 string;
-  state_province:       string | null;
-  postal_code:          string;
-  country_code:         string;
-  timezone:             string;
-  business_hours:       WeeklySchedule;
-  dpo_name:             string | null;
-  dpo_email:            string | null;
-  privacy_policy_url:   string | null;
-  terms_url:            string | null;
-  subscription_tier:    SubscriptionTier;
+  id:                      string;
+  name:                    string;
+  slug:                    string;
+  tax_id:                  string | null;
+  registration_number:     string | null;
+  email:                   string;
+  phone:                   string | null;
+  website:                 string | null;
+  address_line1:           string;
+  address_line2:           string | null;
+  city:                    string;
+  state_province:          string | null;
+  postal_code:             string;
+  country_code:            string;
+  timezone:                string;
+  /** JSONB column — cast to `WeeklySchedule` when reading structured data. */
+  business_hours:          Json;
+  dpo_name:                string | null;
+  dpo_email:               string | null;
+  privacy_policy_url:      string | null;
+  terms_url:               string | null;
+  subscription_tier:       SubscriptionTier;
   subscription_expires_at: string | null;
-  is_active:            boolean;
-  is_verified:          boolean;
-  deleted_at:           string | null;
-  created_at:           string;
-  updated_at:           string;
+  is_active:               boolean;
+  is_verified:             boolean;
+  deleted_at:              string | null;
+  created_at:              string;
+  updated_at:              string;
 }
 
 /** Represents a row in the `clinic_members` table. */
@@ -173,7 +190,8 @@ export interface DoctorRow {
   sub_specialty:                   string | null;
   professional_email:              string | null;
   professional_phone:              string | null;
-  availability_schedule:           WeeklySchedule;
+  /** JSONB column — cast to `WeeklySchedule` when reading structured data. */
+  availability_schedule:           Json;
   default_appointment_duration_minutes: number;
   max_patients_per_day:            number | null;
   is_active:                       boolean;
@@ -304,67 +322,76 @@ export interface AuditLogRow {
 // ---------------------------------------------------------------------------
 
 export type ClinicInsert = Omit<ClinicRow,
-  'id' | 'created_at' | 'updated_at' | 'is_verified' | 'deleted_at'
+  'id' | 'created_at' | 'updated_at' | 'is_verified' | 'deleted_at' | 'subscription_expires_at'
 > & {
-  id?: string;
+  id?: string | undefined;
+  subscription_expires_at?: string | null | undefined;
 };
 
 export type DoctorInsert = Omit<DoctorRow,
   'id' | 'created_at' | 'updated_at' | 'deleted_at'
 > & {
-  id?: string;
+  id?: string | undefined;
 };
 
 export type PatientInsert = Omit<PatientRow,
   | 'id' | 'created_at' | 'updated_at' | 'deleted_at'
   | 'data_deletion_completed_at' | 'anonymized_at'
 > & {
-  id?: string;
+  id?: string | undefined;
 };
 
 export type AppointmentTypeInsert = Omit<AppointmentTypeRow,
   'id' | 'created_at' | 'updated_at'
 > & {
-  id?: string;
+  id?: string | undefined;
 };
 
 export type AppointmentInsert = Omit<AppointmentRow,
   'id' | 'ends_at' | 'created_at' | 'updated_at' | 'deleted_at'
 > & {
-  id?: string;
+  id?: string | undefined;
 };
 
 export type PatientConsentInsert = Omit<PatientConsentRow,
   'id' | 'created_at'
 > & {
-  id?: string;
+  id?: string | undefined;
 };
 
 export type AuditLogInsert = Omit<AuditLogRow, 'id' | 'created_at'> & {
-  id?: string;
+  id?: string | undefined;
 };
 
 // ---------------------------------------------------------------------------
-// UPDATE TYPES — Only updatable fields (excludes immutable fields)
+// UPDATE TYPES — Only updatable fields (excludes immutable fields).
+//
+// These use explicit `| undefined` on each optional property to satisfy
+// Supabase's `Record<string, unknown>` generic constraint under the strict
+// `exactOptionalPropertyTypes: true` TypeScript compiler option.
 // ---------------------------------------------------------------------------
 
-export type ClinicUpdate = Partial<Omit<ClinicRow,
+type OptionalWithUndefined<T> = {
+  [K in keyof T]?: T[K] | undefined;
+};
+
+export type ClinicUpdate = OptionalWithUndefined<Omit<ClinicRow,
   'id' | 'created_at' | 'updated_at'
 >>;
 
-export type DoctorUpdate = Partial<Omit<DoctorRow,
+export type DoctorUpdate = OptionalWithUndefined<Omit<DoctorRow,
   'id' | 'clinic_id' | 'created_at' | 'updated_at'
 >>;
 
-export type PatientUpdate = Partial<Omit<PatientRow,
+export type PatientUpdate = OptionalWithUndefined<Omit<PatientRow,
   'id' | 'clinic_id' | 'created_at' | 'updated_at'
 >>;
 
-export type AppointmentTypeUpdate = Partial<Omit<AppointmentTypeRow,
+export type AppointmentTypeUpdate = OptionalWithUndefined<Omit<AppointmentTypeRow,
   'id' | 'clinic_id' | 'created_at' | 'updated_at'
 >>;
 
-export type AppointmentUpdate = Partial<Omit<AppointmentRow,
+export type AppointmentUpdate = OptionalWithUndefined<Omit<AppointmentRow,
   'id' | 'clinic_id' | 'ends_at' | 'created_at' | 'updated_at'
 >>;
 
@@ -377,44 +404,52 @@ export type Database = {
   public: {
     Tables: {
       clinics: {
-        Row:    ClinicRow;
-        Insert: ClinicInsert;
-        Update: ClinicUpdate;
+        Row:           ClinicRow;
+        Insert:        ClinicInsert;
+        Update:        ClinicUpdate;
+        Relationships: [];
       };
       clinic_members: {
-        Row:    ClinicMemberRow;
-        Insert: Omit<ClinicMemberRow, 'id' | 'created_at' | 'updated_at'> & { id?: string };
-        Update: Partial<Omit<ClinicMemberRow, 'id' | 'created_at' | 'updated_at'>>;
+        Row:           ClinicMemberRow;
+        Insert:        Omit<ClinicMemberRow, 'id' | 'created_at' | 'updated_at'> & { id?: string | undefined };
+        Update:        OptionalWithUndefined<Omit<ClinicMemberRow, 'id' | 'created_at' | 'updated_at'>>;
+        Relationships: [];
       };
       doctors: {
-        Row:    DoctorRow;
-        Insert: DoctorInsert;
-        Update: DoctorUpdate;
+        Row:           DoctorRow;
+        Insert:        DoctorInsert;
+        Update:        DoctorUpdate;
+        Relationships: [];
       };
       patients: {
-        Row:    PatientRow;
-        Insert: PatientInsert;
-        Update: PatientUpdate;
+        Row:           PatientRow;
+        Insert:        PatientInsert;
+        Update:        PatientUpdate;
+        Relationships: [];
       };
       appointment_types: {
-        Row:    AppointmentTypeRow;
-        Insert: AppointmentTypeInsert;
-        Update: AppointmentTypeUpdate;
+        Row:           AppointmentTypeRow;
+        Insert:        AppointmentTypeInsert;
+        Update:        AppointmentTypeUpdate;
+        Relationships: [];
       };
       appointments: {
-        Row:    AppointmentRow;
-        Insert: AppointmentInsert;
-        Update: AppointmentUpdate;
+        Row:           AppointmentRow;
+        Insert:        AppointmentInsert;
+        Update:        AppointmentUpdate;
+        Relationships: [];
       };
       patient_consents: {
-        Row:    PatientConsentRow;
-        Insert: PatientConsentInsert;
-        Update: never; // Immutable — no updates allowed
+        Row:           PatientConsentRow;
+        Insert:        PatientConsentInsert;
+        Update:        Record<string, never>; // Immutable — no updates allowed
+        Relationships: [];
       };
       audit_logs: {
-        Row:    AuditLogRow;
-        Insert: AuditLogInsert;
-        Update: never; // Immutable — no updates allowed
+        Row:           AuditLogRow;
+        Insert:        AuditLogInsert;
+        Update:        Record<string, never>; // Immutable — no updates allowed
+        Relationships: [];
       };
     };
     Views: Record<string, never>;
@@ -427,14 +462,51 @@ export type Database = {
         Args:    Record<string, never>;
         Returns: UserRole;
       };
+      has_completed_onboarding: {
+        Args:    Record<string, never>;
+        Returns: boolean;
+      };
+      is_clinic_owner_or_admin: {
+        Args:    { p_clinic_id: string };
+        Returns: boolean;
+      };
+      get_user_clinics: {
+        Args:    Record<string, never>;
+        Returns: {
+          clinic_id:   string;
+          clinic_name: string;
+          role:        UserRole;
+          is_active:   boolean;
+        }[];
+      };
+      log_audit_event: {
+        Args: {
+          p_clinic_id:     string;
+          p_action:        AuditAction;
+          p_resource_type: string;
+          p_resource_id?:  string;
+          p_http_method?:  string;
+          p_api_endpoint?: string;
+          p_success?:      boolean;
+          p_error_code?:   string;
+          p_old_values?:   Record<string, unknown>;
+          p_new_values?:   Record<string, unknown>;
+        };
+        Returns: string;
+      };
+      get_clinic_member_count: {
+        Args:    { p_clinic_id: string };
+        Returns: number;
+      };
     };
     Enums: {
-      appointment_status: AppointmentStatus;
-      gender_type:        GenderType;
-      gdpr_lawful_basis:  GdprLawfulBasis;
-      user_role:          UserRole;
+      appointment_status:  AppointmentStatus;
+      gender_type:         GenderType;
+      gdpr_lawful_basis:   GdprLawfulBasis;
+      user_role:           UserRole;
       notification_channel: NotificationChannel;
-      audit_action:       AuditAction;
+      audit_action:        AuditAction;
     };
+    CompositeTypes: Record<string, never>;
   };
 };
