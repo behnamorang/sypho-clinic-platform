@@ -136,6 +136,21 @@ export type {
   CalendarInitialData,
 } from '@/types/calendar';
 
+// Re-export booking portal types
+export type {
+  GeoContext,
+  PublicClinicProfile,
+  PublicServiceProfile,
+  PublicDoctorProfile,
+  BookingStep,
+  BookingWizardState,
+  PatientBookingFormData,
+  BookingTimeSlot,
+  BookingConfirmationResult,
+  BookingConfirmRequest,
+  BookingSlotsQuery,
+} from '@/types/booking';
+
 // ---------------------------------------------------------------------------
 // CALENDAR / SCHEDULING
 // ---------------------------------------------------------------------------

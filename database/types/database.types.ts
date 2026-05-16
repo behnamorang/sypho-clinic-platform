@@ -498,6 +498,41 @@ export type Database = {
         Args:    { p_clinic_id: string };
         Returns: number;
       };
+      get_booked_slots: {
+        Args: {
+          p_doctor_id: string;
+          p_date:      string;  // ISO date string 'YYYY-MM-DD'
+        };
+        Returns: {
+          scheduled_at: string;
+          ends_at:      string;
+        }[];
+      };
+      book_appointment_as_patient: {
+        Args: {
+          p_clinic_slug:         string;
+          p_appointment_type_id: string;
+          p_doctor_id:           string;
+          p_scheduled_at:        string;  // ISO 8601 datetime
+          p_first_name:          string;
+          p_last_name:           string;
+          p_date_of_birth:       string;  // ISO date 'YYYY-MM-DD'
+          p_gender:              GenderType;
+          p_email:               string;
+          p_phone:               string;
+          p_chief_complaint:     string;
+          p_gdpr_consent:        boolean;
+          p_marketing_consent:   boolean;
+          p_consent_version:     string;
+          p_ip_address:          string;
+          p_user_agent:          string;
+        };
+        Returns: {
+          appointment_id: string;
+          patient_id:     string;
+          clinic_id:      string;
+        };
+      };
     };
     Enums: {
       appointment_status:  AppointmentStatus;

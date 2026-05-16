@@ -8,17 +8,32 @@
  * 3. Enforce onboarding completion for clinic owners on first login.
  * 4. Prevent authenticated users from accessing auth pages (login/register).
  * 5. Inject strict security headers (CSP, HSTS, etc.) on every response.
+ * 6. Detect visitor geolocation from CDN headers and forward as request headers.
+ *    This allows Server Components on the booking page to read geo context
+ *    via next/headers() without additional client-side API calls.
  *
  * Route categories:
  * - PROTECTED:   Require authentication. Unauthenticated → /login.
  * - AUTH:        Login/register pages. Authenticated → /dashboard.
  * - ONBOARDING:  Requires authentication but NOT onboarding completion.
+ * - BOOKING:     Fully public — no auth guard, no redirect.
  * - PUBLIC:      No guards applied.
+ *
+ * Geo detection (for Smart Location-Based Personalization):
+ *   Reads the visitor's country from CDN-injected headers in this priority:
+ *     1. Cloudflare:  CF-IPCountry
+ *     2. Vercel Edge: x-vercel-ip-country
+ *     3. Generic CDN: x-country-code
+ *     4. Accept-Language header (language region hint)
+ *     5. Fallback: 'DE' (EU default)
+ *   The resolved country code is forwarded to Server Components via the
+ *   request header x-geo-country.
  *
  * @compliance
  * - GDPR Article 32: Technical security measures (security headers).
+ * - GDPR: IP address is used ONLY for geo detection; never stored here.
  * - OWASP: CSP, HSTS, X-Frame-Options, referrer policy.
- * - Multi-tenancy: Onboarding check prevents dashboardaccess without a clinic.
+ * - Multi-tenancy: Onboarding check prevents dashboard access without a clinic.
  */
 
 import { NextResponse, type NextRequest } from 'next/server';
@@ -51,7 +66,62 @@ const AUTH_ROUTE_PREFIXES = [
 const PUBLIC_BYPASS_PREFIXES = [
   '/api/auth/callback',  // Auth callback must be fully public
   '/api/auth/signout',   // Sign-out must be accessible
+  '/api/booking/',       // Public booking API — no auth required
 ] as const;
+
+/** Pattern for public patient-facing booking pages: /{slug}/booking/* */
+const BOOKING_PAGE_PATTERN = /^\/[a-z0-9-]+\/booking(\/.*)?$/;
+
+// ---------------------------------------------------------------------------
+// Geo detection
+// ---------------------------------------------------------------------------
+
+/**
+ * Extracts the visitor's country from CDN/proxy request headers.
+ *
+ * Checks in priority order:
+ *   1. Cloudflare CF-IPCountry (most reliable, attached by CDN before reaching origin)
+ *   2. Vercel x-vercel-ip-country (Vercel Edge Network)
+ *   3. Generic x-country-code (other CDN providers)
+ *   4. Accept-Language header (language region hint — less reliable)
+ *
+ * GDPR: The IP address itself is never read or stored here. Only the
+ * derived country code (non-personal metadata) is extracted and forwarded.
+ *
+ * @param request - The incoming Next.js request.
+ * @returns ISO 3166-1 alpha-2 country code string (e.g., 'OM', 'DE', 'GB').
+ */
+function detectCountryCode(request: NextRequest): string {
+  // Cloudflare CDN header (most reliable)
+  const cfCountry = request.headers.get('cf-ipcountry');
+  if (cfCountry && cfCountry !== 'XX' && cfCountry !== 'T1') {
+    return cfCountry.toUpperCase();
+  }
+
+  // Vercel Edge Network header
+  const vercelCountry = request.headers.get('x-vercel-ip-country');
+  if (vercelCountry) {
+    return vercelCountry.toUpperCase();
+  }
+
+  // Generic CDN header (AWS CloudFront, etc.)
+  const genericCountry = request.headers.get('x-country-code');
+  if (genericCountry) {
+    return genericCountry.toUpperCase();
+  }
+
+  // Accept-Language fallback (e.g., "ar-OM" → "OM", "en-GB" → "GB")
+  const acceptLanguage = request.headers.get('accept-language');
+  if (acceptLanguage) {
+    const regionMatch = /[a-zA-Z]{2}-([A-Z]{2})/i.exec(acceptLanguage);
+    if (regionMatch?.[1]) {
+      return regionMatch[1].toUpperCase();
+    }
+  }
+
+  // Default: EU (Germany) — safe GDPR-compliant default
+  return 'DE';
+}
 
 // ---------------------------------------------------------------------------
 // CSP builder
@@ -93,11 +163,13 @@ function buildContentSecurityPolicy(): string {
  *
  * Execution order:
  * 1. Allow public bypass routes through immediately.
- * 2. Refresh Supabase session and retrieve the current user.
- * 3. Apply auth route guard (redirect unauthenticated users).
- * 4. Apply onboarding guard (redirect to /onboarding if not yet completed).
- * 5. Redirect authenticated users away from auth pages.
- * 6. Inject security headers.
+ * 2. Allow booking page routes through (public — no auth required).
+ * 3. Refresh Supabase session and retrieve the current user.
+ * 4. Apply auth route guard (redirect unauthenticated users).
+ * 5. Apply onboarding guard (redirect to /onboarding if not yet completed).
+ * 6. Redirect authenticated users away from auth pages.
+ * 7. Inject geo country header for location-based personalization.
+ * 8. Inject security headers.
  */
 export async function middleware(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
@@ -113,6 +185,26 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     const bypassResponse = NextResponse.next({ request });
     injectSecurityHeaders(bypassResponse);
     return bypassResponse;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Step 0b: Booking page routes — public, no auth guard.
+  // Inject geo headers for server-side location personalization.
+  // ---------------------------------------------------------------------------
+  const isBookingPage = BOOKING_PAGE_PATTERN.test(pathname);
+
+  if (isBookingPage) {
+    const countryCode = detectCountryCode(request);
+
+    // Forward geo country to Server Components via request headers
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-geo-country', countryCode);
+
+    const bookingResponse = NextResponse.next({
+      request: { headers: requestHeaders },
+    });
+    injectSecurityHeaders(bookingResponse);
+    return bookingResponse;
   }
 
   // ---------------------------------------------------------------------------
@@ -184,7 +276,14 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   }
 
   // ---------------------------------------------------------------------------
-  // Step 6: Inject security headers on all responses
+  // Step 6: Inject geo header for all authenticated routes as well
+  // (useful for future dashboard geo features)
+  // ---------------------------------------------------------------------------
+  const countryCode = detectCountryCode(request);
+  response.headers.set('x-geo-country', countryCode);
+
+  // ---------------------------------------------------------------------------
+  // Step 7: Inject security headers on all responses
   // ---------------------------------------------------------------------------
   injectSecurityHeaders(response);
 
