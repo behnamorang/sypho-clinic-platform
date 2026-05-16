@@ -98,16 +98,20 @@ CREATE TYPE audit_action AS ENUM (
  */
 CREATE OR REPLACE FUNCTION get_current_clinic_id()
 RETURNS uuid
-LANGUAGE sql
+LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT clinic_id
-  FROM public.clinic_members
-  WHERE user_id = auth.uid()
-    AND is_active = true
-  LIMIT 1;
+BEGIN
+  RETURN (
+    SELECT clinic_id
+    FROM public.clinic_members
+    WHERE user_id   = auth.uid()
+      AND is_active = true
+    LIMIT 1
+  );
+END;
 $$;
 
 /**
@@ -116,16 +120,20 @@ $$;
  */
 CREATE OR REPLACE FUNCTION get_current_user_role()
 RETURNS user_role
-LANGUAGE sql
+LANGUAGE plpgsql
 STABLE
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT role
-  FROM public.clinic_members
-  WHERE user_id = auth.uid()
-    AND is_active = true
-  LIMIT 1;
+BEGIN
+  RETURN (
+    SELECT role
+    FROM public.clinic_members
+    WHERE user_id   = auth.uid()
+      AND is_active = true
+    LIMIT 1
+  );
+END;
 $$;
 
 /**
@@ -149,7 +157,7 @@ $$;
 -- =============================================================================
 
 CREATE TABLE IF NOT EXISTS public.clinics (
-  id                    uuid              PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id                    uuid              PRIMARY KEY DEFAULT gen_random_uuid(),
 
   -- Identity
   name                  text              NOT NULL CHECK (char_length(name) BETWEEN 2 AND 255),
@@ -218,7 +226,7 @@ CREATE TRIGGER trg_clinics_updated_at
 -- =============================================================================
 
 CREATE TABLE IF NOT EXISTS public.clinic_members (
-  id           uuid         PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id           uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
   clinic_id    uuid         NOT NULL REFERENCES public.clinics (id) ON DELETE CASCADE,
   user_id      uuid         NOT NULL REFERENCES auth.users (id) ON DELETE CASCADE,
 
@@ -255,7 +263,7 @@ CREATE TRIGGER trg_clinic_members_updated_at
 -- =============================================================================
 
 CREATE TABLE IF NOT EXISTS public.doctors (
-  id                    uuid         PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id                    uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
   clinic_id             uuid         NOT NULL REFERENCES public.clinics (id) ON DELETE CASCADE,
 
   -- Link to Supabase Auth user (optional: some doctors may not have login access)
@@ -316,7 +324,7 @@ CREATE TRIGGER trg_doctors_updated_at
 -- =============================================================================
 
 CREATE TABLE IF NOT EXISTS public.patients (
-  id                    uuid         PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id                    uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
   clinic_id             uuid         NOT NULL REFERENCES public.clinics (id) ON DELETE RESTRICT,
 
   -- Link to Supabase Auth user (patients who have created an account)
@@ -392,7 +400,7 @@ CREATE TRIGGER trg_patients_updated_at
 -- =============================================================================
 
 CREATE TABLE IF NOT EXISTS public.appointment_types (
-  id                    uuid         PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id                    uuid         PRIMARY KEY DEFAULT gen_random_uuid(),
   clinic_id             uuid         NOT NULL REFERENCES public.clinics (id) ON DELETE CASCADE,
 
   name                  text         NOT NULL CHECK (char_length(name) BETWEEN 2 AND 200),
@@ -428,7 +436,7 @@ CREATE TRIGGER trg_appointment_types_updated_at
 -- =============================================================================
 
 CREATE TABLE IF NOT EXISTS public.appointments (
-  id                    uuid              PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id                    uuid              PRIMARY KEY DEFAULT gen_random_uuid(),
   clinic_id             uuid              NOT NULL REFERENCES public.clinics (id) ON DELETE RESTRICT,
   patient_id            uuid              NOT NULL REFERENCES public.patients (id) ON DELETE RESTRICT,
   doctor_id             uuid              NOT NULL REFERENCES public.doctors (id) ON DELETE RESTRICT,
@@ -437,8 +445,10 @@ CREATE TABLE IF NOT EXISTS public.appointments (
   -- Scheduling
   scheduled_at          timestamptz       NOT NULL,
   duration_minutes      integer           NOT NULL CHECK (duration_minutes BETWEEN 5 AND 480),
-  ends_at               timestamptz       GENERATED ALWAYS AS
-                          (scheduled_at + (duration_minutes * interval '1 minute')) STORED,
+  -- ends_at is computed by the trg_appointments_ends_at trigger (BEFORE INSERT OR UPDATE).
+  -- PostgreSQL 17 requires IMMUTABLE expressions in generated columns;
+  -- timestamptz + interval is STABLE (timezone-dependent), so a trigger is used instead.
+  ends_at               timestamptz,
 
   -- Status
   status                appointment_status NOT NULL DEFAULT 'pending',
@@ -503,6 +513,23 @@ CREATE TRIGGER trg_appointments_updated_at
   BEFORE UPDATE ON public.appointments
   FOR EACH ROW EXECUTE FUNCTION set_updated_at();
 
+-- Compute ends_at before every insert or update.
+-- PostgreSQL 17 requires IMMUTABLE expressions in generated columns, but
+-- timestamptz + interval is STABLE, so we use a trigger instead.
+CREATE OR REPLACE FUNCTION compute_appointment_ends_at()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  NEW.ends_at := NEW.scheduled_at + (NEW.duration_minutes * interval '1 minute');
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER trg_appointments_ends_at
+  BEFORE INSERT OR UPDATE ON public.appointments
+  FOR EACH ROW EXECUTE FUNCTION compute_appointment_ends_at();
+
 -- =============================================================================
 -- TABLE: patient_consents
 -- Description: Immutable audit log of patient consent records.
@@ -511,7 +538,7 @@ CREATE TRIGGER trg_appointments_updated_at
 -- =============================================================================
 
 CREATE TABLE IF NOT EXISTS public.patient_consents (
-  id                    uuid             PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id                    uuid             PRIMARY KEY DEFAULT gen_random_uuid(),
   patient_id            uuid             NOT NULL REFERENCES public.patients (id) ON DELETE RESTRICT,
   clinic_id             uuid             NOT NULL REFERENCES public.clinics (id) ON DELETE RESTRICT,
 
@@ -572,7 +599,7 @@ CREATE INDEX idx_patient_consents_clinic     ON public.patient_consents (clinic_
 -- =============================================================================
 
 CREATE TABLE IF NOT EXISTS public.audit_logs (
-  id              uuid           PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id              uuid           PRIMARY KEY DEFAULT gen_random_uuid(),
   clinic_id       uuid           REFERENCES public.clinics (id) ON DELETE SET NULL,
 
   -- Actor
