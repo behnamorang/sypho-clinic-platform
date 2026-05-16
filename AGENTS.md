@@ -19,6 +19,8 @@ npm run type-check # TypeScript strict check (tsc --noEmit)
 
 The update script auto-generates `.env.local` from injected secrets (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`). Next.js requires `NEXT_PUBLIC_*` vars in `.env.local` — they cannot be read from process env alone because they must be inlined at compile time for client-side code. With placeholder values, the dev server starts and all pages render, but auth/data flows will fail at runtime.
 
+**Important**: The `NEXT_PUBLIC_SUPABASE_URL` must be the base project URL (e.g. `https://projectref.supabase.co`), NOT the REST API URL with `/rest/v1/` appended. The update script strips this suffix automatically.
+
 ### Key caveats
 
 - **No local Supabase CLI** — the project uses a hosted Supabase instance. Database migrations are in `database/migrations/` and must be applied to a remote Supabase project.
