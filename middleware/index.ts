@@ -1,49 +1,44 @@
 /**
  * @file middleware/index.ts
- * @description Next.js Middleware implementation for Sypho.io.
+ * @description Next.js Middleware for Sypho.io.
  *
  * Responsibilities (in execution order):
- * 1. Refresh the Supabase Auth session on every request.
+ * 1. Refresh the Supabase Auth session on every request (Supabase SSR pattern).
  * 2. Enforce authentication guards for protected routes.
  * 3. Enforce onboarding completion for clinic owners on first login.
- * 4. Prevent authenticated users from accessing auth pages (login/register).
- * 5. Inject strict security headers (CSP, HSTS, etc.) on every response.
- * 6. Detect visitor geolocation from CDN headers and forward as request headers.
- *    This allows Server Components on the booking page to read geo context
- *    via next/headers() without additional client-side API calls.
+ * 4. Prevent authenticated users from accessing auth pages.
+ * 5. Inject geo detection headers for location-based personalization.
+ * 6. Inject strict security headers (CSP, HSTS, etc.) on every response.
+ *
+ * CRITICAL Supabase SSR note:
+ * The `supabaseResponse` object (returned by the cookie-aware client setup)
+ * MUST be the response that is eventually returned. Any redirect or custom
+ * response must copy that object's Set-Cookie headers so refreshed session
+ * tokens are forwarded to the browser. Failing to do this causes the
+ * "too many redirects" loop: middleware can't see the refreshed token on the
+ * next request, so it keeps bouncing the user between /login and /dashboard.
  *
  * Route categories:
  * - PROTECTED:   Require authentication. Unauthenticated → /login.
  * - AUTH:        Login/register pages. Authenticated → /dashboard.
  * - ONBOARDING:  Requires authentication but NOT onboarding completion.
- * - BOOKING:     Fully public — no auth guard, no redirect.
+ * - BOOKING:     Fully public — no auth, geo headers injected.
  * - PUBLIC:      No guards applied.
- *
- * Geo detection (for Smart Location-Based Personalization):
- *   Reads the visitor's country from CDN-injected headers in this priority:
- *     1. Cloudflare:  CF-IPCountry
- *     2. Vercel Edge: x-vercel-ip-country
- *     3. Generic CDN: x-country-code
- *     4. Accept-Language header (language region hint)
- *     5. Fallback: 'DE' (EU default)
- *   The resolved country code is forwarded to Server Components via the
- *   request header x-geo-country.
  *
  * @compliance
  * - GDPR Article 32: Technical security measures (security headers).
- * - GDPR: IP address is used ONLY for geo detection; never stored here.
+ * - GDPR: IP address used only for geo detection; never stored here.
  * - OWASP: CSP, HSTS, X-Frame-Options, referrer policy.
- * - Multi-tenancy: Onboarding check prevents dashboard access without a clinic.
  */
 
-import { NextResponse, type NextRequest } from 'next/server';
-import { updateSession }                  from '@/lib/supabase/middleware';
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { NextResponse, type NextRequest }          from 'next/server';
+import type { Database }                           from '@/database/types/database.types';
 
 // ---------------------------------------------------------------------------
 // Route configuration
 // ---------------------------------------------------------------------------
 
-/** Routes that require a valid JWT session. */
 const PROTECTED_ROUTE_PREFIXES = [
   '/dashboard',
   '/onboarding',
@@ -54,7 +49,6 @@ const PROTECTED_ROUTE_PREFIXES = [
   '/api/onboarding',
 ] as const;
 
-/** Routes that authenticated users should not access (auth pages). */
 const AUTH_ROUTE_PREFIXES = [
   '/login',
   '/register',
@@ -62,64 +56,36 @@ const AUTH_ROUTE_PREFIXES = [
   '/reset-password',
 ] as const;
 
-/** Routes that should be completely excluded from middleware processing. */
+/** Fully bypassed — skip all session and guard logic. */
 const PUBLIC_BYPASS_PREFIXES = [
-  '/api/auth/callback',  // Auth callback must be fully public
-  '/api/auth/signout',   // Sign-out must be accessible
-  '/api/booking/',       // Public booking API — no auth required
+  '/api/auth/callback',
+  '/api/auth/signout',
+  '/api/booking/',
 ] as const;
 
-/** Pattern for public patient-facing booking pages: /{slug}/booking/* */
+/** Public patient-facing booking pages: /{slug}/booking/* */
 const BOOKING_PAGE_PATTERN = /^\/[a-z0-9-]+\/booking(\/.*)?$/;
 
 // ---------------------------------------------------------------------------
 // Geo detection
 // ---------------------------------------------------------------------------
 
-/**
- * Extracts the visitor's country from CDN/proxy request headers.
- *
- * Checks in priority order:
- *   1. Cloudflare CF-IPCountry (most reliable, attached by CDN before reaching origin)
- *   2. Vercel x-vercel-ip-country (Vercel Edge Network)
- *   3. Generic x-country-code (other CDN providers)
- *   4. Accept-Language header (language region hint — less reliable)
- *
- * GDPR: The IP address itself is never read or stored here. Only the
- * derived country code (non-personal metadata) is extracted and forwarded.
- *
- * @param request - The incoming Next.js request.
- * @returns ISO 3166-1 alpha-2 country code string (e.g., 'OM', 'DE', 'GB').
- */
 function detectCountryCode(request: NextRequest): string {
-  // Cloudflare CDN header (most reliable)
   const cfCountry = request.headers.get('cf-ipcountry');
-  if (cfCountry && cfCountry !== 'XX' && cfCountry !== 'T1') {
-    return cfCountry.toUpperCase();
-  }
+  if (cfCountry && cfCountry !== 'XX' && cfCountry !== 'T1') return cfCountry.toUpperCase();
 
-  // Vercel Edge Network header
   const vercelCountry = request.headers.get('x-vercel-ip-country');
-  if (vercelCountry) {
-    return vercelCountry.toUpperCase();
-  }
+  if (vercelCountry) return vercelCountry.toUpperCase();
 
-  // Generic CDN header (AWS CloudFront, etc.)
   const genericCountry = request.headers.get('x-country-code');
-  if (genericCountry) {
-    return genericCountry.toUpperCase();
-  }
+  if (genericCountry) return genericCountry.toUpperCase();
 
-  // Accept-Language fallback (e.g., "ar-OM" → "OM", "en-GB" → "GB")
   const acceptLanguage = request.headers.get('accept-language');
   if (acceptLanguage) {
-    const regionMatch = /[a-zA-Z]{2}-([A-Z]{2})/i.exec(acceptLanguage);
-    if (regionMatch?.[1]) {
-      return regionMatch[1].toUpperCase();
-    }
+    const match = /[a-zA-Z]{2}-([A-Z]{2})/i.exec(acceptLanguage);
+    if (match?.[1]) return match[1].toUpperCase();
   }
 
-  // Default: EU (Germany) — safe GDPR-compliant default
   return 'DE';
 }
 
@@ -127,19 +93,11 @@ function detectCountryCode(request: NextRequest): string {
 // CSP builder
 // ---------------------------------------------------------------------------
 
-/**
- * Builds a strict Content Security Policy header.
- *
- * Directives are intentionally restrictive.
- * 'unsafe-inline' for scripts is required by Next.js (inline script tags for hydration).
- * Tighten further using nonces when using the experimental nonce support in Next.js.
- */
 function buildContentSecurityPolicy(): string {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
-
-  const directives = [
+  return [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",   // 'unsafe-eval' needed for Next.js dev mode
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "img-src 'self' data: blob: https:",
     "font-src 'self' https://fonts.gstatic.com",
@@ -149,181 +107,135 @@ function buildContentSecurityPolicy(): string {
     "form-action 'self'",
     "upgrade-insecure-requests",
     "block-all-mixed-content",
-  ];
-
-  return directives.join('; ');
+  ].join('; ');
 }
 
-// ---------------------------------------------------------------------------
-// Middleware function
-// ---------------------------------------------------------------------------
-
-/**
- * Main middleware function — runs on every matched request.
- *
- * Execution order:
- * 1. Allow public bypass routes through immediately.
- * 2. Allow booking page routes through (public — no auth required).
- * 3. Refresh Supabase session and retrieve the current user.
- * 4. Apply auth route guard (redirect unauthenticated users).
- * 5. Apply onboarding guard (redirect to /onboarding if not yet completed).
- * 6. Redirect authenticated users away from auth pages.
- * 7. Inject geo country header for location-based personalization.
- * 8. Inject security headers.
- */
-export async function middleware(request: NextRequest): Promise<NextResponse> {
-  const { pathname } = request.nextUrl;
-
-  // ---------------------------------------------------------------------------
-  // Step 0: Public bypass — skip all guards for specific API routes
-  // ---------------------------------------------------------------------------
-  const isBypassRoute = PUBLIC_BYPASS_PREFIXES.some((prefix) =>
-    pathname.startsWith(prefix),
-  );
-
-  if (isBypassRoute) {
-    const bypassResponse = NextResponse.next({ request });
-    injectSecurityHeaders(bypassResponse);
-    return bypassResponse;
-  }
-
-  // ---------------------------------------------------------------------------
-  // Step 0b: Booking page routes — public, no auth guard.
-  // Inject geo headers for server-side location personalization.
-  // ---------------------------------------------------------------------------
-  const isBookingPage = BOOKING_PAGE_PATTERN.test(pathname);
-
-  if (isBookingPage) {
-    const countryCode = detectCountryCode(request);
-
-    // Forward geo country to Server Components via request headers
-    const requestHeaders = new Headers(request.headers);
-    requestHeaders.set('x-geo-country', countryCode);
-
-    const bookingResponse = NextResponse.next({
-      request: { headers: requestHeaders },
-    });
-    injectSecurityHeaders(bookingResponse);
-    return bookingResponse;
-  }
-
-  // ---------------------------------------------------------------------------
-  // Step 1: Refresh Supabase session — MUST happen before any redirect logic.
-  //         `updateSession` reads the existing JWT, validates it server-side,
-  //         and refreshes it if expired. The returned `supabase` client uses
-  //         the refreshed session for all subsequent calls in this request.
-  // ---------------------------------------------------------------------------
-  let response = NextResponse.next({ request });
-  const { response: updatedResponse, supabase } = await updateSession(request, response);
-  response = updatedResponse;
-
-  // `getUser()` validates the JWT with the Supabase Auth server.
-  // This is intentionally called AFTER updateSession to use the refreshed token.
-  const { data: { user } } = await supabase.auth.getUser();
-
-  // ---------------------------------------------------------------------------
-  // Step 2: Route classification
-  // ---------------------------------------------------------------------------
-  const isProtectedRoute  = PROTECTED_ROUTE_PREFIXES.some((prefix) =>
-    pathname.startsWith(prefix),
-  );
-  const isAuthRoute       = AUTH_ROUTE_PREFIXES.some((prefix) =>
-    pathname.startsWith(prefix),
-  );
-  const isOnboardingRoute = pathname.startsWith('/onboarding');
-  const isDashboardRoute  = pathname.startsWith('/dashboard');
-
-  // ---------------------------------------------------------------------------
-  // Step 3: Authentication guard
-  // Unauthenticated user → /login with original path preserved as `redirect`.
-  // ---------------------------------------------------------------------------
-  if (isProtectedRoute && !user) {
-    const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(loginUrl);
-  }
-
-  // ---------------------------------------------------------------------------
-  // Step 4: Onboarding guard (authenticated users only)
-  //
-  // Checks `user.app_metadata.onboarding_completed` which is populated by the
-  // admin client after the onboarding wizard is completed.
-  //
-  // Since `getUser()` validates with the Supabase Auth server (not from cache),
-  // it always returns the latest `app_metadata` state.
-  // ---------------------------------------------------------------------------
-  if (user) {
-    const onboardingCompleted = user.app_metadata['onboarding_completed'] === true;
-
-    // Authenticated but onboarding not complete → /onboarding
-    // Exception: /onboarding route itself is always allowed through
-    if (!onboardingCompleted && isDashboardRoute) {
-      return NextResponse.redirect(new URL('/onboarding', request.url));
-    }
-
-    // Onboarding already complete → /dashboard (don't re-visit wizard)
-    if (onboardingCompleted && isOnboardingRoute) {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // Step 5: Auth page guard
-  // Authenticated users should not see login/register pages → /dashboard
-  // ---------------------------------------------------------------------------
-  if (isAuthRoute && user) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
-  }
-
-  // ---------------------------------------------------------------------------
-  // Step 6: Inject geo header for all authenticated routes as well
-  // (useful for future dashboard geo features)
-  // ---------------------------------------------------------------------------
-  const countryCode = detectCountryCode(request);
-  response.headers.set('x-geo-country', countryCode);
-
-  // ---------------------------------------------------------------------------
-  // Step 7: Inject security headers on all responses
-  // ---------------------------------------------------------------------------
-  injectSecurityHeaders(response);
-
-  return response;
-}
-
-// ---------------------------------------------------------------------------
-// Security header injection
-// ---------------------------------------------------------------------------
-
-/**
- * Injects OWASP-recommended security headers on every response.
- * These complement the CSP to provide defense-in-depth.
- *
- * @param response - The NextResponse to mutate with security headers.
- */
 function injectSecurityHeaders(response: NextResponse): void {
   response.headers.set('Content-Security-Policy',   buildContentSecurityPolicy());
   response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
   response.headers.set('X-Frame-Options',           'DENY');
   response.headers.set('X-Content-Type-Options',    'nosniff');
-  response.headers.set('Referrer-Policy',            'strict-origin-when-cross-origin');
-  response.headers.set('Permissions-Policy',         'camera=(), microphone=(), geolocation=(), payment=()');
+  response.headers.set('Referrer-Policy',           'strict-origin-when-cross-origin');
+  response.headers.set('Permissions-Policy',        'camera=(), microphone=(), geolocation=(), payment=()');
   response.headers.set('X-DNS-Prefetch-Control',    'off');
-  response.headers.set('Cross-Origin-Opener-Policy', 'same-origin');
+  response.headers.set('Cross-Origin-Opener-Policy','same-origin');
 }
 
 // ---------------------------------------------------------------------------
-// Middleware matcher
+// Middleware
+// ---------------------------------------------------------------------------
+
+export async function middleware(request: NextRequest): Promise<NextResponse> {
+  const { pathname } = request.nextUrl;
+
+  // ── Step 0a: Bypass — public API routes (no session, no guards) ──────────
+  const isBypassRoute = PUBLIC_BYPASS_PREFIXES.some((p) => pathname.startsWith(p));
+  if (isBypassRoute) {
+    const res = NextResponse.next({ request });
+    injectSecurityHeaders(res);
+    return res;
+  }
+
+  // ── Step 0b: Booking pages — public, inject geo headers only ─────────────
+  if (BOOKING_PAGE_PATTERN.test(pathname)) {
+    const countryCode = detectCountryCode(request);
+    const reqHeaders  = new Headers(request.headers);
+    reqHeaders.set('x-geo-country', countryCode);
+    const res = NextResponse.next({ request: { headers: reqHeaders } });
+    injectSecurityHeaders(res);
+    return res;
+  }
+
+  // ── Step 1: Build the Supabase SSR response ───────────────────────────────
+  //
+  // CRITICAL: `supabaseResponse` is the single source of truth for cookies.
+  // It must be returned (or have its cookies copied to any redirect we create).
+  // The `setAll` callback recreates `supabaseResponse` with the refreshed
+  // token whenever Supabase needs to write new cookies.
+  //
+  let supabaseResponse = NextResponse.next({ request });
+
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+    // Config error — pass through without session check
+    injectSecurityHeaders(supabaseResponse);
+    return supabaseResponse;
+  }
+
+  const supabase = createServerClient<Database>(supabaseUrl, supabaseKey, {
+    cookies: {
+      getAll(): { name: string; value: string }[] {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]): void {
+        // Write into the request so subsequent server code sees them
+        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+        // Recreate supabaseResponse so the Set-Cookie headers are included
+        supabaseResponse = NextResponse.next({ request });
+        cookiesToSet.forEach(({ name, value, options }) => {
+          supabaseResponse.cookies.set(name, value, options);
+        });
+      },
+    },
+  });
+
+  // Validate the JWT server-side (this may refresh the token and call setAll)
+  const { data: { user } } = await supabase.auth.getUser();
+
+  // ── Helper: redirect while carrying refreshed session cookies ────────────
+  function redirect(destination: string): NextResponse {
+    const url = new URL(destination, request.url);
+    const res = NextResponse.redirect(url);
+    // Copy every cookie from supabaseResponse so the session persists
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      res.cookies.set(cookie.name, cookie.value);
+    });
+    injectSecurityHeaders(res);
+    return res;
+  }
+
+  // ── Step 2: Route classification ─────────────────────────────────────────
+  const isProtectedRoute  = PROTECTED_ROUTE_PREFIXES.some((p) => pathname.startsWith(p));
+  const isAuthRoute       = AUTH_ROUTE_PREFIXES.some((p) => pathname.startsWith(p));
+  const isOnboardingRoute = pathname.startsWith('/onboarding');
+  const isDashboardRoute  = pathname.startsWith('/dashboard');
+
+  // ── Step 3: Auth guard ────────────────────────────────────────────────────
+  if (isProtectedRoute && !user) {
+    return redirect(`/login?redirect=${encodeURIComponent(pathname)}`);
+  }
+
+  // ── Step 4: Onboarding guard ──────────────────────────────────────────────
+  if (user) {
+    const onboardingCompleted = user.app_metadata['onboarding_completed'] === true;
+
+    if (!onboardingCompleted && isDashboardRoute) {
+      return redirect('/onboarding');
+    }
+    if (onboardingCompleted && isOnboardingRoute) {
+      return redirect('/dashboard');
+    }
+  }
+
+  // ── Step 5: Bounce authenticated users away from auth pages ──────────────
+  if (isAuthRoute && user) {
+    return redirect('/dashboard');
+  }
+
+  // ── Step 6: Geo + security headers on pass-through response ──────────────
+  supabaseResponse.headers.set('x-geo-country', detectCountryCode(request));
+  injectSecurityHeaders(supabaseResponse);
+
+  // CRITICAL: Return supabaseResponse — it carries the refreshed session cookies.
+  return supabaseResponse;
+}
+
+// ---------------------------------------------------------------------------
+// Matcher
 // ---------------------------------------------------------------------------
 
 export const config = {
-  matcher: [
-    /**
-     * Match all request paths EXCEPT:
-     * - _next/static  (Next.js static assets — no middleware needed)
-     * - _next/image   (Next.js image optimization)
-     * - favicon.ico   (browser favicon)
-     * - public/       (static files in /public directory)
-     */
-    '/((?!_next/static|_next/image|favicon.ico|public/).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|public/).*)'],
 };
