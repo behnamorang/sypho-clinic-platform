@@ -1,5 +1,5 @@
 /**
- * @file next.config.ts
+ * @file next.config.mjs
  * @description Next.js configuration for Sypho.io.
  *
  * Security headers (CSP, HSTS, etc.) are injected via middleware/index.ts
@@ -8,9 +8,8 @@
  * @compliance GDPR / OWASP — strict security posture.
  */
 
-import type { NextConfig } from 'next';
-
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   /**
    * Strict mode surfaces extra warnings for unsafe lifecycle patterns
    * and helps identify side effects in components.

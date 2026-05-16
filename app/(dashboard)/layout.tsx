@@ -1,18 +1,20 @@
 /**
  * @file app/(dashboard)/layout.tsx
- * @description Dashboard route group layout for Sypho.io.
+ * @description Full dashboard route group layout for Sypho.io — Phase 3.
  *
- * This is the authenticated shell for the main application.
- * Phase 2 provides the skeleton; full navigation and sidebar are
- * implemented in Phase 3 (Dashboard & Core Features).
+ * Provides the authenticated shell with:
+ * - Persistent sidebar navigation (desktop) / slide-in drawer (mobile)
+ * - Clinic name and user role display in the sidebar
+ * - Defense-in-depth server-side auth check (middleware handles primary enforcement)
  *
- * Middleware guarantees that only authenticated users with completed
- * onboarding can reach routes under this layout.
+ * @compliance GDPR — Only non-sensitive clinic metadata (name) and user email
+ *             are passed to the sidebar client component for display.
  */
 
 import { redirect }                  from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { getAuthenticatedUser }       from '@/lib/auth/helpers';
+import { getAuthenticatedUser, getClinicMembership } from '@/lib/auth/helpers';
+import { Sidebar }                   from '@/components/layout/sidebar';
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -20,44 +22,69 @@ interface DashboardLayoutProps {
 
 /**
  * Dashboard layout — Server Component.
- * Performs a final server-side auth check as a defense-in-depth measure.
- * The middleware already enforces auth; this adds a belt-and-suspenders layer.
+ *
+ * Fetches the minimum data required for the sidebar (clinic name, user email,
+ * and role) server-side. No sensitive PHI is fetched or forwarded.
  */
 export default async function DashboardLayout({ children }: DashboardLayoutProps) {
-  const supabase  = await createSupabaseServerClient();
+  const supabase   = await createSupabaseServerClient();
   const authResult = await getAuthenticatedUser(supabase);
 
   if (!authResult.ok) {
     redirect('/login?error=session_expired');
   }
 
+  const user = authResult.data;
+
+  const membershipResult = await getClinicMembership(supabase, user.id);
+
+  // If no membership, redirect to onboarding rather than crashing.
+  if (!membershipResult.ok) {
+    redirect('/onboarding');
+  }
+
+  const membership = membershipResult.data;
+
+  // Fetch clinic name for sidebar display.
+  // Type assertion required — same pattern as existing dashboard page.
+  const { data: clinicRaw } = await supabase
+    .from('clinics')
+    .select('name')
+    .eq('id', membership.clinic_id)
+    .maybeSingle();
+
+  const clinic     = clinicRaw as { name: string } | null;
+  const clinicName = clinic?.name ?? 'My Clinic';
+  const userEmail  = user.email ?? '';
+  const userRole   = membership.role;
+
   return (
-    <div className="min-h-screen bg-surface-50">
-      {/* Minimal header — expanded in Phase 3 */}
-      <header className="sticky top-0 z-40 h-14 bg-white border-b border-surface-200 flex items-center px-6 gap-4">
-        <div className="flex items-center gap-2.5 mr-auto">
-          <div className="w-7 h-7 bg-brand-600 rounded-lg flex items-center justify-center flex-shrink-0">
-            <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-            </svg>
-          </div>
-          <span className="font-bold text-surface-900 text-lg">Sypho</span>
-        </div>
+    <div className="flex h-screen overflow-hidden bg-surface-50">
+      {/* Sidebar — desktop permanent, mobile slide-in drawer */}
+      <Sidebar
+        clinicName={clinicName}
+        userEmail={userEmail}
+        userRole={userRole}
+      />
 
-        {/* Sign out — accessible via form POST to prevent CSRF */}
-        <form action="/api/auth/signout" method="POST">
-          <button
-            type="submit"
-            className="text-sm text-surface-600 hover:text-brand-700 font-medium transition-colors px-3 py-1.5 rounded-lg hover:bg-surface-100"
-          >
-            Sign out
-          </button>
-        </form>
-      </header>
+      {/* Main content area */}
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+        {/* Skip-to-content link for keyboard accessibility */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50 focus:px-4 focus:py-2 focus:bg-brand-600 focus:text-white focus:rounded-lg focus:text-sm focus:font-medium"
+        >
+          Skip to main content
+        </a>
 
-      <main id="main-content" className="flex-1">
-        {children}
-      </main>
+        <main
+          id="main-content"
+          className="flex-1 overflow-auto"
+          tabIndex={-1}
+        >
+          {children}
+        </main>
+      </div>
     </div>
   );
 }
