@@ -12,7 +12,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Input }    from '@/components/ui/input';
 import { Button }   from '@/components/ui/button';
@@ -37,8 +36,6 @@ type FieldErrors = Partial<Record<keyof LoginFormValues, string>>;
  * (e.g. when the user was previously redirected from a protected route).
  */
 export function LoginForm({ redirectTo = '/dashboard' }: { redirectTo?: string }) {
-  const router = useRouter();
-
   const [values, setValues] = useState<LoginFormValues>({
     email:    '',
     password: '',
@@ -92,7 +89,6 @@ export function LoginForm({ redirectTo = '/dashboard' }: { redirectTo?: string }
     setIsPending(false);
 
     if (error) {
-      // Map Supabase error codes to user-friendly messages
       const message =
         error.message === 'Invalid login credentials'
           ? 'Incorrect email address or password. Please try again.'
@@ -104,9 +100,13 @@ export function LoginForm({ redirectTo = '/dashboard' }: { redirectTo?: string }
       return;
     }
 
-    // Refresh the Next.js router to trigger middleware session detection
-    router.refresh();
-    router.push(redirectTo.startsWith('/') ? redirectTo : '/dashboard');
+    // Full page navigation ensures the new Supabase session cookie is read
+    // server-side without any client-router race conditions. router.push()
+    // with router.refresh() can cause a blank screen when the middleware
+    // redirects the refreshed /login request to /dashboard while router.push
+    // also navigates — two concurrent navigations producing a blank render.
+    const destination = redirectTo.startsWith('/') ? redirectTo : '/dashboard';
+    window.location.href = destination;
   }
 
   // ---------------------------------------------------------------------------

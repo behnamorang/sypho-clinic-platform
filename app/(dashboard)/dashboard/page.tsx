@@ -25,16 +25,27 @@ import { getAuthenticatedUser, getClinicMembership } from '@/lib/auth/helpers';
  * Fetches clinic stats for today's appointments and renders the overview.
  */
 export default async function DashboardPage() {
+  // eslint-disable-next-line no-console
+  console.log('[DashboardPage] Rendering started');
+
   const supabase   = await createSupabaseServerClient();
   const authResult = await getAuthenticatedUser(supabase);
+
+  // eslint-disable-next-line no-console
+  console.log('[DashboardPage] Auth result ok:', authResult.ok);
 
   if (!authResult.ok) {
     redirect('/login?error=session_expired');
   }
 
   const user = authResult.data;
+  // eslint-disable-next-line no-console
+  console.log('[DashboardPage] User email:', user.email, 'onboarding_completed:', user.app_metadata['onboarding_completed']);
 
   const membershipResult = await getClinicMembership(supabase, user.id);
+  // eslint-disable-next-line no-console
+  console.log('[DashboardPage] Membership ok:', membershipResult.ok);
+
   const membership       = membershipResult.ok ? membershipResult.data : null;
 
   // Fetch clinic details.
@@ -47,6 +58,8 @@ export default async function DashboardPage() {
 
   if (membership) {
     const clinicId = membership.clinic_id;
+    // eslint-disable-next-line no-console
+    console.log('[DashboardPage] clinic_id:', clinicId);
 
     // Today's date range
     const todayStart = new Date();
@@ -100,11 +113,13 @@ export default async function DashboardPage() {
 
     const clinicRes = clinicResRaw as { data: { name: string } | null; error: unknown };
     clinicName     = clinicRes.data?.name ?? null;
-    totalPatients  = patientsRes.count  ?? 0;
-    totalDoctors   = doctorsRes.count   ?? 0;
-    todayAppts     = todayRes.count     ?? 0;
-    pendingAppts   = pendingRes.count   ?? 0;
-    pendingOnline  = onlineRes.count    ?? 0;
+    totalPatients  = (patientsRes as { count: number | null }).count  ?? 0;
+    totalDoctors   = (doctorsRes  as { count: number | null }).count  ?? 0;
+    todayAppts     = (todayRes    as { count: number | null }).count  ?? 0;
+    pendingAppts   = (pendingRes  as { count: number | null }).count  ?? 0;
+    pendingOnline  = (onlineRes   as { count: number | null }).count  ?? 0;
+    // eslint-disable-next-line no-console
+    console.log('[DashboardPage] Stats loaded — clinic:', clinicName, 'patients:', totalPatients);
   }
 
   const displayName = (user.user_metadata['first_name'] as string | undefined)
