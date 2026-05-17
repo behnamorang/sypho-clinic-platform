@@ -11,41 +11,12 @@ import { useState, useCallback } from 'react';
 import { Input }    from '@/components/ui/input';
 import { Select }   from '@/components/ui/select';
 import { Button }   from '@/components/ui/button';
+import { CLINIC_TIMEZONE_OPTIONS } from '@/lib/constants/clinic-timezones';
 import {
   clinicDetailsStepSchema,
   type ClinicDetailsStepValues,
 } from '@/lib/validations/onboarding';
 import type { ZodIssue } from 'zod';
-
-// ---------------------------------------------------------------------------
-// Timezone options (common EU/EEA timezones)
-// ---------------------------------------------------------------------------
-
-const TIMEZONE_OPTIONS = [
-  { value: 'Europe/Berlin',    label: '(UTC+1/+2) Berlin, Frankfurt, Munich' },
-  { value: 'Europe/Amsterdam', label: '(UTC+1/+2) Amsterdam, Netherlands' },
-  { value: 'Europe/Paris',     label: '(UTC+1/+2) Paris, France' },
-  { value: 'Europe/Rome',      label: '(UTC+1/+2) Rome, Milan, Italy' },
-  { value: 'Europe/Madrid',    label: '(UTC+1/+2) Madrid, Barcelona, Spain' },
-  { value: 'Europe/Warsaw',    label: '(UTC+1/+2) Warsaw, Poland' },
-  { value: 'Europe/Vienna',    label: '(UTC+1/+2) Vienna, Austria' },
-  { value: 'Europe/Brussels',  label: '(UTC+1/+2) Brussels, Belgium' },
-  { value: 'Europe/Zurich',    label: '(UTC+1/+2) Zurich, Switzerland' },
-  { value: 'Europe/Stockholm', label: '(UTC+1/+2) Stockholm, Sweden' },
-  { value: 'Europe/Helsinki',  label: '(UTC+2/+3) Helsinki, Finland' },
-  { value: 'Europe/Athens',    label: '(UTC+2/+3) Athens, Greece' },
-  { value: 'Europe/Bucharest', label: '(UTC+2/+3) Bucharest, Romania' },
-  { value: 'Europe/London',    label: '(UTC+0/+1) London, UK' },
-  { value: 'Europe/Dublin',    label: '(UTC+0/+1) Dublin, Ireland' },
-  { value: 'Europe/Lisbon',    label: '(UTC+0/+1) Lisbon, Portugal' },
-  { value: 'Europe/Prague',    label: '(UTC+1/+2) Prague, Czech Republic' },
-  { value: 'Europe/Budapest',  label: '(UTC+1/+2) Budapest, Hungary' },
-  { value: 'Europe/Riga',      label: '(UTC+2/+3) Riga, Latvia' },
-  { value: 'Europe/Tallinn',   label: '(UTC+2/+3) Tallinn, Estonia' },
-  { value: 'Europe/Vilnius',   label: '(UTC+2/+3) Vilnius, Lithuania' },
-  { value: 'Europe/Oslo',      label: '(UTC+1/+2) Oslo, Norway' },
-  { value: 'Europe/Copenhagen',label: '(UTC+1/+2) Copenhagen, Denmark' },
-];
 
 // ---------------------------------------------------------------------------
 // Types
@@ -145,7 +116,7 @@ export function ClinicDetailsStep({ initialValues, onNext }: ClinicDetailsStepPr
         value={values.timezone}
         onChange={handleChange}
         error={fieldErrors.timezone}
-        options={TIMEZONE_OPTIONS}
+        options={CLINIC_TIMEZONE_OPTIONS}
         required
         helperText="All appointment times will be displayed in this timezone."
       />
