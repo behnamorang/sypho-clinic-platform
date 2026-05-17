@@ -40,7 +40,8 @@ const passwordSchema = z
  */
 export const loginSchema = z.object({
   email:    emailSchema,
-  password: z.string().min(1, 'Password is required.'),
+  // Trim: password managers sometimes inject trailing newlines/spaces.
+  password: z.string().trim().min(1, 'Password is required.'),
 });
 
 export type LoginFormValues = z.infer<typeof loginSchema>;
