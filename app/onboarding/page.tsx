@@ -53,7 +53,7 @@ export default async function OnboardingPage() {
     }
   }
 
-  const firstName = user.user_metadata['first_name'] as string | undefined;
+  const firstName = user.user_metadata?.['first_name'] as string | undefined;
   const greeting  = firstName ? `Let's set up ${firstName}'s clinic` : "Let's set up your clinic";
 
   return (

@@ -96,7 +96,8 @@ export default async function DashboardPage() {
     pendingAppts  = pendingRes.count  ?? 0;
   }
 
-  const displayName = (user.user_metadata['first_name'] as string | undefined)
+  const displayName =
+    (user.user_metadata?.['first_name'] as string | undefined)
     ?? user.email?.split('@')[0]
     ?? 'there';
 
