@@ -11,6 +11,11 @@
  *
  * This endpoint is authenticated — unauthenticated requests are rejected.
  *
+ * Database writes use the **service role** client after the caller is verified.
+ * RLS on `clinics` / `clinic_members` prevents new owners from (a) detecting
+ * globally unique slugs and (b) inserting their first membership row; using
+ * the admin client here is intentional and scoped to this trusted route only.
+ *
  * @compliance
  * - GDPR Article 5(2): Accountability — audit log created on record creation.
  * - GDPR Article 6(1)(b): Processing on basis of contract (service agreement).
@@ -92,26 +97,25 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     subscription_tier,
   } = parseResult.data;
 
+  const admin = createSupabaseAdminClient();
+
   // ---------------------------------------------------------------------------
-  // 3. Generate a unique clinic slug
+  // 3. Generate a unique clinic slug (service role — RLS hides other tenants)
   // ---------------------------------------------------------------------------
   const baseSlug = generateClinicSlug(clinic_name);
+  const safeBase = baseSlug.length > 0 ? baseSlug : `clinic-${user.id.slice(0, 8)}`;
 
-  // Ensure slug uniqueness by appending a short random suffix if needed
-  // Type assertion required: Supabase strict inference issue under exactOptionalPropertyTypes
-  const slugCheckResult = await supabase
-    .from('clinics')
-    .select('id')
-    .eq('slug', baseSlug)
-    .maybeSingle();
-  const existingSlug = slugCheckResult.data as { id: string } | null;
-
-  const slug = existingSlug
-    ? `${baseSlug}-${Math.random().toString(36).slice(2, 7)}`
-    : baseSlug;
+  let slug = safeBase;
+  for (let attempt = 0; attempt < 16; attempt += 1) {
+    const { data: slugHit } = await admin.from('clinics').select('id').eq('slug', slug).maybeSingle();
+    if (!slugHit) {
+      break;
+    }
+    slug = `${safeBase}-${Math.random().toString(36).slice(2, 8)}`;
+  }
 
   // ---------------------------------------------------------------------------
-  // 4. Create the clinic record
+  // 4. Create the clinic record (service role — bypasses RLS for trusted onboarding)
   // Type assertions used because Supabase's inference for Insert types
   // under strictest TypeScript settings requires explicit casts.
   // ---------------------------------------------------------------------------
@@ -142,7 +146,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
 
   // @ts-expect-error — Supabase's multi-table Insert type inference resolves to `never[]`
   // under exactOptionalPropertyTypes:true. The payload type is verified above via ClinicInsert.
-  const clinicResult = await supabase.from('clinics').insert(clinicInsertPayload).select('id').single();
+  const clinicResult = await admin.from('clinics').insert(clinicInsertPayload).select('id').single();
 
   const clinic      = clinicResult.data as { id: string } | null;
   const clinicError = clinicResult.error;
@@ -162,7 +166,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
   }
 
   // ---------------------------------------------------------------------------
-  // 5. Create the clinic_member record (user becomes clinic_owner)
+  // 5. Create the clinic_member record (service role — first row bypasses owner RLS)
   // ---------------------------------------------------------------------------
   const memberInsertPayload = {
     clinic_id:   clinic.id,
@@ -173,13 +177,13 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
   };
 
   // @ts-expect-error — Same multi-table Insert type inference issue as above.
-  const memberResult = await supabase.from('clinic_members').insert(memberInsertPayload);
+  const memberResult = await admin.from('clinic_members').insert(memberInsertPayload);
 
   const memberError = memberResult.error;
 
   if (memberError) {
     console.error('[Onboarding] Failed to create clinic member:', memberError.message);
-    await supabase.from('clinics').delete().eq('id', clinic.id);
+    await admin.from('clinics').delete().eq('id', clinic.id);
 
     return NextResponse.json(
       {
@@ -197,8 +201,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
   // 6. Mark onboarding as complete in user app_metadata (admin client)
   //    app_metadata can only be written by the service role (server-side only).
   // ---------------------------------------------------------------------------
-  const adminClient = createSupabaseAdminClient();
-  const { error: metaError } = await adminClient.auth.admin.updateUserById(user.id, {
+  const { error: metaError } = await admin.auth.admin.updateUserById(user.id, {
     app_metadata: { onboarding_completed: true },
   });
 
@@ -227,7 +230,7 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
   };
 
   // @ts-expect-error — Same multi-table Insert type inference issue.
-  await supabase.from('audit_logs').insert(auditPayload);
+  await admin.from('audit_logs').insert(auditPayload);
 
   // ---------------------------------------------------------------------------
   // 8. Return success
