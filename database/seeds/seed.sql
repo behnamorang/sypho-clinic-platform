@@ -47,6 +47,14 @@
 --
 -- TEST PASSWORD (all seed users): SeedTestPassword@2026!
 -- ROTATE ALL PASSWORDS BEFORE DEPLOYING TO ANY NON-DEVELOPMENT ENVIRONMENT.
+--
+-- HOSTED SUPABASE (SQL Editor) — run order for email/password login:
+--   1) Paste and run this entire file (seed.sql).
+--   2) Run database/seeds/seed-auth-identities-supplement.sql next.
+--      Without step 2, users exist in auth.users but signInWithPassword fails
+--      because GoTrue requires an `email` row in auth.identities.
+--   If auth.users inserts error on instance_id, apply migrations first; the
+--   supplement script also backfills instance_id when it is NULL.
 -- =============================================================================
 
 BEGIN;
