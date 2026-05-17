@@ -92,13 +92,26 @@ export function LoginForm({ redirectTo = '/dashboard' }: { redirectTo?: string }
     setIsPending(false);
 
     if (error) {
-      // Map Supabase error codes to user-friendly messages
-      const message =
+      // Prefer machine-readable codes: GoTrue sometimes returns `invalid_credentials`
+      // for wrong password AND for unconfirmed email (to avoid account enumeration).
+      const code = 'code' in error && typeof error.code === 'string' ? error.code : undefined;
+
+      let message: string;
+      if (
+        code === 'email_not_confirmed' ||
+        error.message === 'Email not confirmed'
+      ) {
+        message =
+          'Please confirm your email address using the link we sent you, then try again.';
+      } else if (
+        code === 'invalid_credentials' ||
         error.message === 'Invalid login credentials'
-          ? 'Incorrect email address or password. Please try again.'
-          : error.message === 'Email not confirmed'
-          ? 'Please confirm your email address before signing in.'
-          : 'Sign-in failed. Please try again.';
+      ) {
+        message =
+          'Incorrect email or password. If you just signed up, confirm your email from the message we sent, or use Forgot password.';
+      } else {
+        message = 'Sign-in failed. Please try again.';
+      }
 
       setServerError(message);
       return;
