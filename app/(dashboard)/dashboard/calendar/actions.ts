@@ -1,5 +1,5 @@
 /**
- * @file app/(dashboard)/calendar/actions.ts
+ * @file app/(dashboard)/dashboard/calendar/actions.ts
  * @description Next.js Server Actions for the interactive calendar engine.
  *
  * All mutations enforce:
@@ -12,7 +12,7 @@
  * Type notes: The hand-written Database type in database.types.ts has minor
  * inference gaps with the Supabase JS client under strict `exactOptionalPropertyTypes`.
  * Explicit type assertions are used where inference fails — a pattern already
- * established in the existing codebase (see `app/(dashboard)/page.tsx`).
+ * established in the existing codebase (see `app/(dashboard)/dashboard/page.tsx`).
  *
  * @compliance GDPR Article 5(1)(f) — Integrity & confidentiality through
  *             server-side ownership verification before any data mutation.

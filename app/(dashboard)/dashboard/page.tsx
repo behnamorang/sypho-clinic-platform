@@ -1,5 +1,5 @@
 /**
- * @file app/(dashboard)/page.tsx
+ * @file app/(dashboard)/dashboard/page.tsx
  * @description Main dashboard home page for Sypho.io — Phase 3.
  *
  * Shows a high-level overview:

@@ -1,5 +1,5 @@
 /**
- * @file app/(dashboard)/calendar/page.tsx
+ * @file app/(dashboard)/dashboard/calendar/page.tsx
  * @description Calendar page — Server Component that pre-fetches all data
  * required for the interactive calendar's initial render.
  *

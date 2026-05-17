@@ -23,6 +23,20 @@ const nextConfig = {
   poweredByHeader: false,
 
   /**
+   * Legacy URLs from when the calendar lived at `/calendar` (route group did
+   * not include a `dashboard` path segment). Keeps bookmarks and external links working.
+   */
+  async redirects() {
+    return [
+      {
+        source: '/calendar',
+        destination: '/dashboard/calendar',
+        permanent: true,
+      },
+    ];
+  },
+
+  /**
    * Server Actions configuration.
    * Only allow origins explicitly listed here.
    */
