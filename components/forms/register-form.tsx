@@ -21,7 +21,7 @@ import { Input }   from '@/components/ui/input';
 import { Button }  from '@/components/ui/button';
 import { Alert }   from '@/components/ui/alert';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import { getPublicAppOrigin } from '@/lib/utils/public-app-url';
+import { getAuthEmailRedirectOrigin } from '@/lib/utils/public-app-url';
 import { registerSchema, type RegisterFormValues } from '@/lib/validations/auth';
 import type { ZodIssue } from 'zod';
 
@@ -173,7 +173,7 @@ export function RegisterForm() {
       email:    parseResult.data.email,
       password: parseResult.data.password,
       options:  {
-        emailRedirectTo: `${getPublicAppOrigin()}/api/auth/callback`,
+        emailRedirectTo: `${getAuthEmailRedirectOrigin()}/api/auth/callback`,
         data: {
           first_name: parseResult.data.first_name,
           last_name:  parseResult.data.last_name,

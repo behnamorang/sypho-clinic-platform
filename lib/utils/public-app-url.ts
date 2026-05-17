@@ -7,8 +7,14 @@
  * `.env.example`), prefer the real page origin when the user is on a deployed
  * host so magic links do not point at localhost.
  *
+ * For **email links** (`getAuthEmailRedirectOrigin`), a non-loopback
+ * `NEXT_PUBLIC_APP_URL` always wins so confirmation links are not built with
+ * `http://localhost:3000` when developers open the register form locally.
+ *
  * Operators must still set Supabase Authentication → URL Configuration:
- * Site URL and Redirect URL allowlist to the production origin.
+ * Site URL and Redirect URL allowlist to the production origin. If Site URL
+ * stays on localhost, some email templates still redirect there regardless
+ * of `emailRedirectTo`.
  */
 
 /** True for localhost / loopback hosts only (not "local" TLD). */
@@ -68,4 +74,19 @@ export function getPublicAppOrigin(): string {
     return envOrigin;
   }
   return envOrigin ?? '';
+}
+
+/**
+ * Origin embedded in Supabase auth emails (`emailRedirectTo` / `redirectTo`).
+ *
+ * Prefer `NEXT_PUBLIC_APP_URL` when it points to a deployed host so
+ * confirmation and recovery links never use `localhost` even if the form was
+ * submitted from a local dev server.
+ */
+export function getAuthEmailRedirectOrigin(): string {
+  const envOrigin = parseHttpOrigin(process.env.NEXT_PUBLIC_APP_URL);
+  if (envOrigin && !isLoopbackOrigin(envOrigin)) {
+    return envOrigin;
+  }
+  return getPublicAppOrigin();
 }
