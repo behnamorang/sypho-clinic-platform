@@ -271,7 +271,7 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   // it always returns the latest `app_metadata` state.
   // ---------------------------------------------------------------------------
   if (user) {
-    const onboardingCompleted = user.app_metadata['onboarding_completed'] === true;
+    const onboardingCompleted = user.app_metadata?.['onboarding_completed'] === true;
 
     // Authenticated but onboarding not complete → /onboarding
     // Exception: /onboarding route itself is always allowed through

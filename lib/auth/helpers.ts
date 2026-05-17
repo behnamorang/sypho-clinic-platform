@@ -147,7 +147,7 @@ export function requireRole(
  * @returns `true` if onboarding is complete, `false` otherwise.
  */
 export function hasCompletedOnboarding(user: User): boolean {
-  return user.app_metadata['onboarding_completed'] === true;
+  return user.app_metadata?.['onboarding_completed'] === true;
 }
 
 // ---------------------------------------------------------------------------
