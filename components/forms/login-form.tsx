@@ -27,6 +27,90 @@ import type { ZodIssue } from 'zod';
 
 type FieldErrors = Partial<Record<keyof LoginFormValues, string>>;
 
+type AuthLikeError = {
+  message: string;
+  name?: string;
+  status?: number;
+  code?: string;
+};
+
+/**
+ * Maps Supabase / GoTrue sign-in errors to safe UI copy (no PII).
+ * GoTrue and auth-js use several shapes: `AuthApiError` with `code`,
+ * `CustomAuthError` subclasses with only `name` + `message`, or legacy strings.
+ */
+function mapSignInErrorMessage(error: AuthLikeError): string {
+  const rawMsg = error.message ?? '';
+  const msg = rawMsg.toLowerCase();
+  const code = typeof error.code === 'string' ? error.code : undefined;
+  const name = typeof error.name === 'string' ? error.name : undefined;
+
+  if (code === 'email_not_confirmed' || msg.includes('email not confirmed')) {
+    return 'Please confirm your email address using the link we sent you, then try again.';
+  }
+
+  const looksLikeWrongCredentials =
+    code === 'invalid_credentials' ||
+    name === 'AuthInvalidCredentialsError' ||
+    msg.includes('invalid login credentials') ||
+    msg.includes('invalid credentials') ||
+    msg.includes('email or password is incorrect') ||
+    msg.includes('wrong email or password') ||
+    msg.includes('invalid grant');
+
+  if (looksLikeWrongCredentials) {
+    return 'Incorrect email or password. If you just signed up, confirm your email from the message we sent, or use Forgot password.';
+  }
+
+  if (
+    name === 'AuthInvalidTokenResponseError' ||
+    msg.includes('auth session or user missing') ||
+    msg.includes('auth session missing')
+  ) {
+    return (
+      'Sign-in could not complete (no session returned). ' +
+      'Check that Vercel has the correct Supabase URL and anon key for this project, then try again.'
+    );
+  }
+
+  if (
+    code === 'over_request_rate_limit' ||
+    error.status === 429 ||
+    msg.includes('rate limit') ||
+    msg.includes('too many requests')
+  ) {
+    return 'Too many sign-in attempts. Wait a few minutes and try again.';
+  }
+
+  if (code === 'captcha_failed' || msg.includes('captcha')) {
+    return 'Captcha verification failed. Refresh the page and try again.';
+  }
+
+  if (code === 'user_banned' || msg.includes('user is banned') || msg.includes('banned')) {
+    return 'This account cannot sign in. Contact your clinic administrator.';
+  }
+
+  if (
+    name === 'AuthRetryableFetchError' ||
+    msg.includes('failed to fetch') ||
+    msg.includes('network error') ||
+    msg.includes('load failed')
+  ) {
+    return 'Network error. Check your connection and try again.';
+  }
+
+  if (code === 'email_provider_disabled' || code === 'provider_disabled') {
+    return 'Email sign-in is disabled for this project. Contact support.';
+  }
+
+  // Short, non-sensitive server messages only
+  if (rawMsg.length > 0 && rawMsg.length < 160 && !rawMsg.includes('@')) {
+    return `Sign-in failed: ${rawMsg}`;
+  }
+
+  return 'Sign-in failed. Please try again.';
+}
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -92,28 +176,7 @@ export function LoginForm({ redirectTo = '/dashboard' }: { redirectTo?: string }
     setIsPending(false);
 
     if (error) {
-      // Prefer machine-readable codes: GoTrue sometimes returns `invalid_credentials`
-      // for wrong password AND for unconfirmed email (to avoid account enumeration).
-      const code = 'code' in error && typeof error.code === 'string' ? error.code : undefined;
-
-      let message: string;
-      if (
-        code === 'email_not_confirmed' ||
-        error.message === 'Email not confirmed'
-      ) {
-        message =
-          'Please confirm your email address using the link we sent you, then try again.';
-      } else if (
-        code === 'invalid_credentials' ||
-        error.message === 'Invalid login credentials'
-      ) {
-        message =
-          'Incorrect email or password. If you just signed up, confirm your email from the message we sent, or use Forgot password.';
-      } else {
-        message = 'Sign-in failed. Please try again.';
-      }
-
-      setServerError(message);
+      setServerError(mapSignInErrorMessage(error as AuthLikeError));
       return;
     }
 
