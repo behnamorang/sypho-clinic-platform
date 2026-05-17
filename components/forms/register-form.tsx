@@ -37,6 +37,73 @@ type RegistrationState =
   | { status: 'success'; email: string }
   | { status: 'error'; message: string };
 
+type AuthLikeError = {
+  message?: string;
+  name?: string;
+  code?: string;
+  status?: number;
+};
+
+function redactEmailsInMessage(text: string): string {
+  return text.replace(/\b[^\s@]+@[^\s@]+\.[^\s@]+\b/gi, '[email]');
+}
+
+/**
+ * Maps Supabase `signUp` errors to UI copy (no raw addresses in messages).
+ */
+function mapRegisterSupabaseError(error: AuthLikeError): string {
+  const raw = typeof error.message === 'string' ? error.message : '';
+  const msg = raw.toLowerCase();
+  const code = typeof error.code === 'string' ? error.code : undefined;
+  const errorName = typeof error.name === 'string' ? error.name : undefined;
+
+  const looksLikeAlreadyExists =
+    code === 'email_exists' ||
+    code === 'user_already_exists' ||
+    msg.includes('already registered') ||
+    msg.includes('user already registered') ||
+    msg.includes('already been registered') ||
+    msg.includes('email address is already registered') ||
+    msg.includes('email already exists') ||
+    msg.includes('duplicate key') ||
+    msg.includes('unique constraint');
+
+  if (looksLikeAlreadyExists) {
+    return 'An account with this email already exists. Try signing in, or use Forgot password.';
+  }
+
+  if (code === 'signup_disabled' || msg.includes('signup is disabled')) {
+    return 'New registrations are disabled for this project. Contact support.';
+  }
+
+  if (code === 'over_request_rate_limit' || error.status === 429 || msg.includes('rate limit')) {
+    return 'Too many registration attempts. Wait a few minutes and try again.';
+  }
+
+  if (code === 'weak_password' || msg.includes('weak password')) {
+    return 'Password does not meet security requirements. Adjust it and try again.';
+  }
+
+  if (code === 'captcha_failed' || msg.includes('captcha')) {
+    return 'Captcha verification failed. Refresh the page and try again.';
+  }
+
+  if (
+    errorName === 'AuthRetryableFetchError' ||
+    msg.includes('failed to fetch') ||
+    msg.includes('network error')
+  ) {
+    return 'Network error. Check your connection and try again.';
+  }
+
+  const redacted = redactEmailsInMessage(raw).trim();
+  if (redacted.length > 0 && redacted.length < 220) {
+    return `Registration failed: ${redacted}`;
+  }
+
+  return 'Registration failed. Please try again.';
+}
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -115,13 +182,10 @@ export function RegisterForm() {
     });
 
     if (error) {
-      const message =
-        error.message.includes('already registered') ||
-        error.message.includes('User already registered')
-          ? 'An account with this email already exists. Please sign in instead.'
-          : 'Registration failed. Please try again.';
-
-      setState({ status: 'error', message });
+      setState({
+        status:  'error',
+        message: mapRegisterSupabaseError(error as unknown as AuthLikeError),
+      });
       return;
     }
 
