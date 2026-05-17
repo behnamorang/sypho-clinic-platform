@@ -90,3 +90,46 @@ export function getAuthEmailRedirectOrigin(): string {
   }
   return getPublicAppOrigin();
 }
+
+export type AuthCallbackUrlResult =
+  | { ok: true; url: string }
+  | { ok: false; message: string };
+
+/**
+ * Absolute `/api/auth/callback` URL for Supabase `redirect_to` / `emailRedirectTo`.
+ * If this URL is not listed under Supabase → Authentication → URL Configuration →
+ * Redirect URLs, GoTrue may reject the flow or confirmation emails may not send.
+ *
+ * @param pathSuffix - Appended after `/api/auth/callback` (e.g. `?type=recovery`).
+ */
+export function resolveAuthCallbackUrl(pathSuffix: string = ''): AuthCallbackUrlResult {
+  const origin = getAuthEmailRedirectOrigin().replace(/\/$/, '');
+  if (!origin) {
+    return {
+      ok:      false,
+      message:
+        'Application URL is missing. Set NEXT_PUBLIC_APP_URL on Vercel to your HTTPS site (for example https://your-app.vercel.app), then redeploy.',
+    };
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(origin);
+  } catch {
+    return {
+      ok:      false,
+      message: 'NEXT_PUBLIC_APP_URL is not a valid URL. Fix it in Vercel and redeploy.',
+    };
+  }
+
+  const loopback = isLoopbackOrigin(origin);
+  if (!loopback && parsed.protocol !== 'https:') {
+    return {
+      ok:      false,
+      message:
+        'Production app URL must use HTTPS. Update NEXT_PUBLIC_APP_URL on Vercel and redeploy.',
+    };
+  }
+
+  return { ok: true, url: `${parsed.origin}/api/auth/callback${pathSuffix}` };
+}
