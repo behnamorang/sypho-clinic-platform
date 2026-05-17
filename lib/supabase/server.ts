@@ -97,6 +97,33 @@ export async function createSupabaseServerClient() {
 }
 
 // ---------------------------------------------------------------------------
+// PUBLIC (ANON) CLIENT — unauthenticated reads allowed by RLS
+// ---------------------------------------------------------------------------
+
+/**
+ * Creates a Supabase client using the **anon** key with no user session and
+ * no cookie access. Use only where Row Level Security grants `anon` deliberate
+ * read access (public booking catalog — see `003_booking_portal.sql`).
+ *
+ * Does **not** use the service role key, so it is safe for public Server
+ * Components on Vercel without `SUPABASE_SERVICE_ROLE_KEY`.
+ *
+ * @returns A typed Supabase client acting as the `anon` Postgres role.
+ */
+export function createSupabasePublicClient() {
+  const supabaseUrl = requireEnvVar('NEXT_PUBLIC_SUPABASE_URL');
+  const supabaseKey = requireEnvVar('NEXT_PUBLIC_SUPABASE_ANON_KEY');
+
+  return createClient<Database>(supabaseUrl, supabaseKey, {
+    auth: {
+      autoRefreshToken:   false,
+      persistSession:     false,
+      detectSessionInUrl: false,
+    },
+  });
+}
+
+// ---------------------------------------------------------------------------
 // ADMIN CLIENT (uses SERVICE ROLE key — bypasses RLS)
 // ---------------------------------------------------------------------------
 

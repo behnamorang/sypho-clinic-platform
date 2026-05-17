@@ -18,14 +18,8 @@
  * This page intentionally uses NO authentication guard — it is a public-facing
  * landing page for patients who may not have an account.
  *
- * مکانیزم مسیریابی (Persian / فارسی):
- * بخش داینامیک [clinicSlug] در App Router نکست‌جی‌اس، اسلاگ منحصربه‌فرد هر کلینیک را
- * از URL دریافت می‌کند. مثلاً /my-clinic/booking به clinicSlug = 'my-clinic' تبدیل می‌شود.
- * سرور این اسلاگ را در جدول clinics جستجو می‌کند و اگر کلینیک فعالی پیدا نشود، صفحه ۴۰۴
- * نمایش داده می‌شود. اطلاعات جغرافیایی کاربر (کشور، پیش‌شماره تلفن، واحد ارز) از هدرهای
- * CDN مانند CF-IPCountry یا x-vercel-ip-country در middleware خوانده و به کامپوننت
- * BookingWizard ارسال می‌شود تا تجربه محلی‌سازی شده ارائه دهد.
- *
+ * Clinic catalog reads use the anon Supabase client so RLS (`clinics_select_public_booking`)
+ * applies; the service role is not required on this route.
  * @compliance GDPR — No personal data is stored during page render.
  *             IP address is used only for geo detection; it is not logged.
  */
@@ -33,7 +27,7 @@
 import { headers }                  from 'next/headers';
 import { notFound }                 from 'next/navigation';
 import type { Metadata }            from 'next';
-import { createSupabaseAdminClient } from '@/lib/supabase/server';
+import { createSupabasePublicClient } from '@/lib/supabase/server';
 import { getGeoContextFromHeaders }  from '@/lib/booking/geo';
 import { BookingWizard }             from '@/components/booking/booking-wizard';
 import type { PublicClinicProfile }  from '@/types/booking';
@@ -64,7 +58,7 @@ export async function generateMetadata(
   { params }: { params: Promise<PageParams> }
 ): Promise<Metadata> {
   const resolvedParams = await params;
-  const supabase = createSupabaseAdminClient();
+  const supabase = createSupabasePublicClient();
 
   const { data: rawData } = await supabase
     .from('clinics')
@@ -121,7 +115,7 @@ export default async function BookingPage(
   // -------------------------------------------------------------------------
   // Step 2: Fetch clinic profile
   // -------------------------------------------------------------------------
-  const supabase = createSupabaseAdminClient();
+  const supabase = createSupabasePublicClient();
 
   const { data: rawData, error } = await supabase
     .from('clinics')
