@@ -429,7 +429,10 @@ async function seedClinic(admin: SupabaseClient<Database>, def: ClinicSeedDefini
     };
 
     const { error: conErr } = await admin.from('patient_consents').insert(consentRow);
-    if (conErr && conErr.code !== '23505') {
+    const isDup =
+      conErr?.code === '23505' ||
+      (conErr?.message ?? '').toLowerCase().includes('duplicate');
+    if (conErr && !isDup) {
       throw new Error(`patient_consents insert failed (${def.slug}): ${conErr.message}`);
     }
   }
