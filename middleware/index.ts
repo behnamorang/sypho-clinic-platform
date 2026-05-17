@@ -233,12 +233,12 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   //         the refreshed session for all subsequent calls in this request.
   // ---------------------------------------------------------------------------
   let response = NextResponse.next({ request });
-  const { response: updatedResponse, supabase } = await updateSession(request, response);
-  response = updatedResponse;
+  const sessionResult = await updateSession(request, response);
+  response = sessionResult.response;
 
-  // `getUser()` validates the JWT with the Supabase Auth server.
-  // This is intentionally called AFTER updateSession to use the refreshed token.
-  const { data: { user } } = await supabase.auth.getUser();
+  const { data: { user } } = sessionResult.supabase
+    ? await sessionResult.supabase.auth.getUser()
+    : { data: { user: null } };
 
   // ---------------------------------------------------------------------------
   // Step 2: Route classification

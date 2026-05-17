@@ -46,14 +46,19 @@ import type { Database }                            from '@/database/types/datab
 export async function updateSession(
   request: NextRequest,
   response: NextResponse,
-): Promise<{ response: NextResponse; supabase: ReturnType<typeof createServerClient<Database>> }> {
+): Promise<
+  | { response: NextResponse; supabase: ReturnType<typeof createServerClient<Database>> }
+  | { response: NextResponse; supabase: null }
+> {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseKey) {
-    throw new Error(
-      '[Supabase Middleware] Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY.'
+    console.error(
+      '[Supabase Middleware] Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY. ' +
+        'Session refresh skipped; set these in the Vercel project Environment Variables (all targets).',
     );
+    return { response, supabase: null };
   }
 
   const supabase = createServerClient<Database>(supabaseUrl, supabaseKey, {
@@ -62,7 +67,8 @@ export async function updateSession(
         return request.cookies.getAll();
       },
       setAll(cookiesToSet: { name: string; value: string; options: CookieOptions }[]) {
-        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+        // Edge middleware: only `response.cookies` is writable. Calling
+        // `request.cookies.set` can throw and yields MIDDLEWARE_INVOCATION_FAILED on Vercel.
         cookiesToSet.forEach(({ name, value, options }) => {
           response.cookies.set(name, value, options);
         });
