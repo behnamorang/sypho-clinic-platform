@@ -22,6 +22,8 @@ import { config }      from 'dotenv';
 import { resolve }     from 'path';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
+import { normalizeSupabaseProjectUrl } from '../../lib/utils/supabase-project-url';
+
 import type {
   AppointmentInsert,
   AppointmentStatus,
@@ -498,18 +500,6 @@ async function seedClinic(admin: SupabaseClient<Database>, def: ClinicSeedDefini
   }
 }
 
-function normalizeSupabaseUrl(raw: string): string {
-  let u = raw.trim();
-  if (u.endsWith('/')) {
-    u = u.slice(0, -1);
-  }
-  const restIdx = u.indexOf('/rest/v1');
-  if (restIdx !== -1) {
-    u = u.slice(0, restIdx);
-  }
-  return u;
-}
-
 /**
  * Loads environment variables and runs the demo seed.
  */
@@ -517,7 +507,7 @@ async function main(): Promise<void> {
   config({ path: resolve(process.cwd(), '.env.local') });
   config({ path: resolve(process.cwd(), '.env') });
 
-  const url         = normalizeSupabaseUrl(requireEnv('NEXT_PUBLIC_SUPABASE_URL'));
+  const url         = normalizeSupabaseProjectUrl(requireEnv('NEXT_PUBLIC_SUPABASE_URL'));
   const serviceKey  = requireEnv('SUPABASE_SERVICE_ROLE_KEY');
   const anonKey     = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   if (anonKey && serviceKey === anonKey) {

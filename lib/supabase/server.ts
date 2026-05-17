@@ -28,6 +28,7 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { createClient }                             from '@supabase/supabase-js';
 import { cookies }                                  from 'next/headers';
 import type { Database }                            from '@/database/types/database.types';
+import { normalizeSupabaseProjectUrl }              from '@/lib/utils/supabase-project-url';
 
 // ---------------------------------------------------------------------------
 // ENVIRONMENT VARIABLE VALIDATION
@@ -71,7 +72,7 @@ function requireEnvVar(name: string): string {
  * @returns A promise resolving to a fully-typed Supabase server client.
  */
 export async function createSupabaseServerClient() {
-  const supabaseUrl = requireEnvVar('NEXT_PUBLIC_SUPABASE_URL');
+  const supabaseUrl = normalizeSupabaseProjectUrl(requireEnvVar('NEXT_PUBLIC_SUPABASE_URL'));
   const supabaseKey = requireEnvVar('NEXT_PUBLIC_SUPABASE_ANON_KEY');
 
   const cookieStore = await cookies();
@@ -111,7 +112,7 @@ export async function createSupabaseServerClient() {
  * @returns A typed Supabase client acting as the `anon` Postgres role.
  */
 export function createSupabasePublicClient() {
-  const supabaseUrl = requireEnvVar('NEXT_PUBLIC_SUPABASE_URL');
+  const supabaseUrl = normalizeSupabaseProjectUrl(requireEnvVar('NEXT_PUBLIC_SUPABASE_URL'));
   const supabaseKey = requireEnvVar('NEXT_PUBLIC_SUPABASE_ANON_KEY');
 
   return createClient<Database>(supabaseUrl, supabaseKey, {
@@ -158,8 +159,8 @@ export function createSupabasePublicClient() {
  * @returns A fully-typed Supabase admin client (bypasses RLS).
  */
 export function createSupabaseAdminClient() {
-  const supabaseUrl        = requireEnvVar('NEXT_PUBLIC_SUPABASE_URL');
-  const serviceRoleKey     = requireEnvVar('SUPABASE_SERVICE_ROLE_KEY');
+  const supabaseUrl    = normalizeSupabaseProjectUrl(requireEnvVar('NEXT_PUBLIC_SUPABASE_URL'));
+  const serviceRoleKey = requireEnvVar('SUPABASE_SERVICE_ROLE_KEY');
 
   return createClient<Database>(supabaseUrl, serviceRoleKey, {
     auth: {

@@ -40,6 +40,7 @@
 
 import { NextResponse, type NextRequest } from 'next/server';
 import { updateSession }                  from '@/lib/supabase/middleware';
+import { normalizeSupabaseProjectUrl }    from '@/lib/utils/supabase-project-url';
 
 // ---------------------------------------------------------------------------
 // Route configuration
@@ -154,7 +155,8 @@ function detectCountryCode(request: NextRequest): string {
  * Tighten further using nonces when using the experimental nonce support in Next.js.
  */
 function buildContentSecurityPolicy(): string {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+  const raw         = process.env.NEXT_PUBLIC_SUPABASE_URL ?? '';
+  const supabaseUrl = raw.trim().length > 0 ? normalizeSupabaseProjectUrl(raw) : '';
 
   const directives = [
     "default-src 'self'",

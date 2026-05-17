@@ -16,6 +16,7 @@
 
 import { createBrowserClient } from '@supabase/ssr';
 import type { Database } from '@/database/types/database.types';
+import { normalizeSupabaseProjectUrl } from '@/lib/utils/supabase-project-url';
 
 /**
  * Creates a typed Supabase browser client for use in React Client Components.
@@ -39,5 +40,5 @@ export function createSupabaseBrowserClient() {
     );
   }
 
-  return createBrowserClient<Database>(supabaseUrl, supabaseKey);
+  return createBrowserClient<Database>(normalizeSupabaseProjectUrl(supabaseUrl), supabaseKey);
 }

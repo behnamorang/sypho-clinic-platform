@@ -16,6 +16,7 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import type { NextRequest, NextResponse }          from 'next/server';
 import type { Database }                            from '@/database/types/database.types';
+import { normalizeSupabaseProjectUrl }                from '@/lib/utils/supabase-project-url';
 
 /**
  * Updates the Supabase session within a Next.js Middleware function.
@@ -61,7 +62,10 @@ export async function updateSession(
     return { response, supabase: null };
   }
 
-  const supabase = createServerClient<Database>(supabaseUrl, supabaseKey, {
+  const supabase = createServerClient<Database>(
+    normalizeSupabaseProjectUrl(supabaseUrl),
+    supabaseKey,
+    {
     cookies: {
       getAll() {
         return request.cookies.getAll();

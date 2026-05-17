@@ -15,6 +15,9 @@
  * RLS on `clinics` / `clinic_members` prevents new owners from (a) detecting
  * globally unique slugs and (b) inserting their first membership row; using
  * the admin client here is intentional and scoped to this trusted route only.
+ * When `NEXT_PUBLIC_SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are set
+ * correctly (bare project URL, not `/rest/v1`), clinic creation succeeds;
+ * misconfiguration surfaces as HTTP 503 instead of an unhandled error.
  *
  * @compliance
  * - GDPR Article 5(2): Accountability — audit log created on record creation.
@@ -97,7 +100,24 @@ export async function POST(request: NextRequest): Promise<NextResponse<ApiRespon
     subscription_tier,
   } = parseResult.data;
 
-  const admin = createSupabaseAdminClient();
+  let admin: ReturnType<typeof createSupabaseAdminClient>;
+  try {
+    admin = createSupabaseAdminClient();
+  } catch (err: unknown) {
+    const detail = err instanceof Error ? err.message : String(err);
+    console.error('[Onboarding] Admin client unavailable (check Supabase env):', detail);
+    return NextResponse.json(
+      {
+        data:  null,
+        error: {
+          code:    'ONBOARDING_SERVICE_UNAVAILABLE',
+          message:
+            'Clinic setup is temporarily unavailable. Please try again later. If the problem continues, contact support.',
+        },
+      },
+      { status: 503 },
+    );
+  }
 
   // ---------------------------------------------------------------------------
   // 3. Generate a unique clinic slug (service role — RLS hides other tenants)

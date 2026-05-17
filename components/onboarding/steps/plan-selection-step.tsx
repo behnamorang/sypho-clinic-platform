@@ -106,7 +106,9 @@ const PLAN_TEMPLATES: PlanTemplate[] = [
 ];
 
 /**
- * Formats recurring EUR prices using the visitor locale (digit grouping, separators).
+ * Formats recurring EUR prices using the visitor locale (grouping, separators).
+ * Uses the Latin numbering system so amounts stay Western digits (e.g. GCC
+ * visitors with `ar-OM` still see `49`, not Arabic-Indic numerals).
  *
  * @param locale - BCP 47 locale from geo defaults.
  * @param amountEur - Whole-euro monthly amount (billing currency remains EUR).
@@ -118,6 +120,7 @@ function formatEurPerMonth(locale: string, amountEur: number): string {
     currency:              'EUR',
     currencyDisplay:       'narrowSymbol',
     maximumFractionDigits: 0,
+    numberingSystem:       'latn',
   }).format(amountEur);
   return `${amount} / month`;
 }
