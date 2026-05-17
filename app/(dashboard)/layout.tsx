@@ -16,6 +16,9 @@ import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getAuthenticatedUser, getClinicMembership } from '@/lib/auth/helpers';
 import { Sidebar }                   from '@/components/layout/sidebar';
 
+/** Layout reads the Supabase session from cookies — not statically prerenderable. */
+export const dynamic = 'force-dynamic';
+
 interface DashboardLayoutProps {
   children: React.ReactNode;
 }

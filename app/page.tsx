@@ -10,6 +10,9 @@
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
+/** Session is read from cookies via `createSupabaseServerClient()` — not statically prerenderable. */
+export const dynamic = 'force-dynamic';
+
 /**
  * Root page — performs server-side redirect based on auth state.
  */

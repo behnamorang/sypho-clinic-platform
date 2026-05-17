@@ -39,6 +39,9 @@ import { BookingWizard }             from '@/components/booking/booking-wizard';
 import type { PublicClinicProfile }  from '@/types/booking';
 import type { ClinicRow }            from '@/database/types/database.types';
 
+/** Geo and CDN logic reads `headers()` — request-bound, not statically prerenderable. */
+export const dynamic = 'force-dynamic';
+
 type ClinicSelectRow = Pick<
   ClinicRow,
   | 'id' | 'name' | 'slug' | 'email' | 'phone' | 'address_line1'

@@ -9,6 +9,9 @@
 
 import Link from 'next/link';
 
+/** Child pages use cookie-backed Supabase server client — keep the subtree dynamic. */
+export const dynamic = 'force-dynamic';
+
 interface OnboardingLayoutProps {
   children: React.ReactNode;
 }
