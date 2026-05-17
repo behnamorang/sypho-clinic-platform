@@ -19,7 +19,11 @@ import type { Metadata }              from 'next';
 import { headers }                    from 'next/headers';
 import { redirect }                   from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { getOnboardingGeoDefaultsFromHeaders } from '@/lib/booking/geo';
+import {
+  getOnboardingGeoDefaultsFromCountry,
+  getOnboardingGeoDefaultsFromHeaders,
+} from '@/lib/booking/geo';
+import type { OnboardingGeoDefaults } from '@/types/booking';
 import {
   getAuthenticatedUser,
   getClinicMembership,
@@ -58,7 +62,12 @@ export default async function OnboardingPage() {
   const firstName = user.user_metadata?.['first_name'] as string | undefined;
   const greeting  = firstName ? `Let's set up ${firstName}'s clinic` : "Let's set up your clinic";
 
-  const geoDefaults = getOnboardingGeoDefaultsFromHeaders(await headers());
+  let geoDefaults: OnboardingGeoDefaults;
+  try {
+    geoDefaults = getOnboardingGeoDefaultsFromHeaders(await headers());
+  } catch {
+    geoDefaults = getOnboardingGeoDefaultsFromCountry('DE');
+  }
 
   return (
     <div className="w-full max-w-2xl mx-auto">

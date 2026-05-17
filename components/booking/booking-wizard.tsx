@@ -26,6 +26,7 @@
 'use client';
 
 import { useCallback, useReducer }        from 'react';
+import { getGeoContext }                  from '@/lib/booking/geo';
 import { BookingProgress }                from '@/components/booking/booking-progress';
 import { ServiceSelection }               from '@/components/booking/steps/service-selection';
 import { DoctorSelection }                from '@/components/booking/steps/doctor-selection';
@@ -144,7 +145,8 @@ function wizardReducer(state: BookingWizardState, action: WizardAction): Booking
 
 interface BookingWizardProps {
   clinic:     PublicClinicProfile;
-  geo:        GeoContext;
+  /** When omitted or null, defaults to Germany (DE) geo context. */
+  geo?:       GeoContext | null | undefined;
 }
 
 // ---------------------------------------------------------------------------
@@ -155,6 +157,7 @@ interface BookingWizardProps {
  * Root booking wizard — manages all step transitions and API submissions.
  */
 export function BookingWizard({ clinic, geo }: BookingWizardProps) {
+  const safeGeo = geo ?? getGeoContext('DE');
   const [state, dispatch] = useReducer(wizardReducer, INITIAL_STATE);
 
   // ---------------------------------------------------------------------------
@@ -312,7 +315,7 @@ export function BookingWizard({ clinic, geo }: BookingWizardProps) {
               {state.step === 'service' && (
                 <ServiceSelection
                   clinicSlug={clinic.slug}
-                  geo={geo}
+                  geo={safeGeo}
                   selectedService={state.selectedService}
                   onSelect={(service) => dispatch({ type: 'SELECT_SERVICE', service })}
                 />
@@ -336,7 +339,7 @@ export function BookingWizard({ clinic, geo }: BookingWizardProps) {
                   selectedDoctor={state.selectedDoctor}
                   selectedDate={state.selectedDate}
                   selectedSlot={state.selectedSlot}
-                  geo={geo}
+                  geo={safeGeo}
                   onDateChange={(date) => dispatch({ type: 'SELECT_DATE', date })}
                   onSlotSelect={(slot) => dispatch({ type: 'SELECT_SLOT', slot })}
                 />
@@ -346,7 +349,7 @@ export function BookingWizard({ clinic, geo }: BookingWizardProps) {
               {state.step === 'patient_info' && state.selectedService && state.selectedDoctor && (
                 <PatientInformation
                   clinic={clinic}
-                  geo={geo}
+                  geo={safeGeo}
                   initialData={state.patientInfo}
                   onSubmit={(data) => void submitBooking(data)}
                   isLoading={false}
@@ -366,7 +369,7 @@ export function BookingWizard({ clinic, geo }: BookingWizardProps) {
                   doctor={state.selectedDoctor}
                   scheduledAt={state.selectedSlot}
                   confirmation={state.confirmation}
-                  dateFormat={geo.dateFormat}
+                  dateFormat={safeGeo.dateFormat}
                 />
               )}
             </div>

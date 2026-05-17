@@ -28,9 +28,9 @@ import { headers }                  from 'next/headers';
 import { notFound }                 from 'next/navigation';
 import type { Metadata }            from 'next';
 import { createSupabasePublicClient } from '@/lib/supabase/server';
-import { getGeoContextFromHeaders }  from '@/lib/booking/geo';
+import { getGeoContext, getGeoContextFromHeaders } from '@/lib/booking/geo';
 import { BookingWizard }             from '@/components/booking/booking-wizard';
-import type { PublicClinicProfile }  from '@/types/booking';
+import type { PublicClinicProfile, GeoContext }  from '@/types/booking';
 import type { ClinicRow }            from '@/database/types/database.types';
 
 /** Geo and CDN logic reads `headers()` — request-bound, not statically prerenderable. */
@@ -109,8 +109,13 @@ export default async function BookingPage(
   // -------------------------------------------------------------------------
   // Step 1: Resolve geo context from middleware-injected headers
   // -------------------------------------------------------------------------
-  const requestHeaders = await headers();
-  const geoContext     = getGeoContextFromHeaders(requestHeaders);
+  let geoContext: GeoContext;
+  try {
+    const requestHeaders = await headers();
+    geoContext = getGeoContextFromHeaders(requestHeaders);
+  } catch {
+    geoContext = getGeoContext('DE');
+  }
 
   // -------------------------------------------------------------------------
   // Step 2: Fetch clinic profile

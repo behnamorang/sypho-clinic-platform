@@ -344,13 +344,45 @@ const DEFAULT_LOCALE_BY_COUNTRY: Readonly<Record<string, string>> = {
 // PUBLIC API
 // ---------------------------------------------------------------------------
 
+/** ISO country code used when headers are missing or invalid. */
+const FALLBACK_COUNTRY_CODE = 'DE' as const;
+
+/**
+ * Reads a header value without throwing if `headers` or `get` is malformed.
+ *
+ * @param headers - Request headers object (may be null in exotic runtimes).
+ * @param name - Header name (case-insensitive per Fetch spec).
+ * @returns Trimmed value or null.
+ */
+function readHeaderSafe(
+  headers: { get: (name: string) => string | null } | null | undefined,
+  name: string,
+): string | null {
+  if (headers === null || headers === undefined) {
+    return null;
+  }
+  if (typeof headers.get !== 'function') {
+    return null;
+  }
+  try {
+    const raw = headers.get(name);
+    if (raw === null || raw === undefined) {
+      return null;
+    }
+    const trimmed = raw.trim();
+    return trimmed.length > 0 ? trimmed : null;
+  } catch {
+    return null;
+  }
+}
+
 /**
  * Builds onboarding defaults (timezone, locale, phone, currency) from a country code.
  *
- * @param countryCode - ISO 3166-1 alpha-2 country code (case-insensitive).
+ * @param countryCode - ISO 3166-1 alpha-2 country code (case-insensitive); empty or invalid uses DE.
  * @returns Defaults safe for clinic onboarding UI (timezone is always a curated option).
  */
-export function getOnboardingGeoDefaultsFromCountry(countryCode: string): OnboardingGeoDefaults {
+export function getOnboardingGeoDefaultsFromCountry(countryCode: string | null | undefined): OnboardingGeoDefaults {
   const base     = getGeoContext(countryCode);
   const rawTz    = IANA_TIMEZONE_BY_COUNTRY[base.countryCode] ?? 'Europe/Berlin';
   const timezone = resolveClinicTimezoneIANA(rawTz);
@@ -367,11 +399,11 @@ export function getOnboardingGeoDefaultsFromCountry(countryCode: string): Onboar
  * Reads request headers and returns onboarding geo defaults.
  * Honors `x-geo-country` first when present (set by middleware from edge IP detection).
  *
- * @param headers - Request headers (`headers()` in RSC or middleware request).
+ * @param headers - Request headers (`headers()` in RSC); null/undefined yields DE defaults.
  * @returns Defaults for timezone, locale, phone prefix, and currency display.
  */
 export function getOnboardingGeoDefaultsFromHeaders(
-  headers: { get: (name: string) => string | null }
+  headers: { get: (name: string) => string | null } | null | undefined,
 ): OnboardingGeoDefaults {
   const countryCode = detectCountryFromHeaders(headers);
   return getOnboardingGeoDefaultsFromCountry(countryCode);
@@ -381,11 +413,16 @@ export function getOnboardingGeoDefaultsFromHeaders(
  * Maps an ISO 3166-1 alpha-2 country code to a complete GeoContext object.
  * Provides sensible EU defaults for unknown or missing country codes.
  *
- * @param countryCode - Two-letter ISO country code (case-insensitive).
+ * @param countryCode - Two-letter ISO country code (case-insensitive); empty or invalid uses DE.
  * @returns A fully populated GeoContext for localization.
  */
-export function getGeoContext(countryCode: string): GeoContext {
-  const code = countryCode.toUpperCase();
+export function getGeoContext(countryCode: string | null | undefined): GeoContext {
+  const raw =
+    countryCode === null || countryCode === undefined
+      ? ''
+      : String(countryCode).trim();
+  const upper = raw.length >= 2 ? raw.slice(0, 2).toUpperCase() : '';
+  const code  = /^[A-Z]{2}$/.test(upper) ? upper : FALLBACK_COUNTRY_CODE;
 
   const currencyCode   = CURRENCIES[code]      ?? 'EUR';
   const currencySymbol = CURRENCY_SYMBOLS[currencyCode] ?? currencyCode;
@@ -408,46 +445,45 @@ export function getGeoContext(countryCode: string): GeoContext {
  *   4. Generic `x-country-code`
  *   5. Fallback `DE` when nothing matches
  *
- * @param headers - A Headers-like object (from Next.js request or headers()).
+ * @param headers - A Headers-like object (from Next.js request or headers()); null/undefined returns DE.
  * @returns ISO 3166-1 alpha-2 country code string.
  */
 export function detectCountryFromHeaders(
-  headers: { get: (name: string) => string | null }
+  headers: { get: (name: string) => string | null } | null | undefined,
 ): string {
-  const forwardedGeo = headers.get('x-geo-country');
+  const forwardedGeo = readHeaderSafe(headers, 'x-geo-country');
   if (forwardedGeo) {
-    const trimmed = forwardedGeo.trim();
-    if (/^[A-Za-z]{2}$/.test(trimmed)) {
-      return trimmed.toUpperCase();
+    if (/^[A-Za-z]{2}$/.test(forwardedGeo)) {
+      return forwardedGeo.toUpperCase();
     }
   }
 
-  const cfCountry = headers.get('cf-ipcountry');
+  const cfCountry = readHeaderSafe(headers, 'cf-ipcountry');
   if (cfCountry && cfCountry !== 'XX' && cfCountry !== 'T1') {
     return cfCountry.toUpperCase();
   }
 
-  const vercelCountry = headers.get('x-vercel-ip-country');
+  const vercelCountry = readHeaderSafe(headers, 'x-vercel-ip-country');
   if (vercelCountry) {
     return vercelCountry.toUpperCase();
   }
 
-  const genericCountry = headers.get('x-country-code');
+  const genericCountry = readHeaderSafe(headers, 'x-country-code');
   if (genericCountry) {
     return genericCountry.toUpperCase();
   }
 
-  return 'DE';
+  return FALLBACK_COUNTRY_CODE;
 }
 
 /**
  * Convenience function: reads headers and returns a full GeoContext.
  *
- * @param headers - A Headers-like object (request headers or next/headers).
+ * @param headers - A Headers-like object (request headers or next/headers); null/undefined uses DE.
  * @returns GeoContext for localization.
  */
 export function getGeoContextFromHeaders(
-  headers: { get: (name: string) => string | null }
+  headers: { get: (name: string) => string | null } | null | undefined,
 ): GeoContext {
   const countryCode = detectCountryFromHeaders(headers);
   return getGeoContext(countryCode);

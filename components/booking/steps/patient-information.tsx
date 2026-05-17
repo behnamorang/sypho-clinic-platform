@@ -25,6 +25,7 @@ import type {
   PublicClinicProfile,
 }                                 from '@/types/booking';
 import type { GenderType }        from '@/database/types/database.types';
+import { getGeoContext }          from '@/lib/booking/geo';
 
 // ---------------------------------------------------------------------------
 // PHONE COUNTRY CODES (subset — most common booking markets)
@@ -64,7 +65,8 @@ const PHONE_COUNTRIES: PhoneCountryOption[] = [
 
 interface PatientInformationProps {
   clinic:     PublicClinicProfile;
-  geo:        GeoContext;
+  /** When omitted or null, defaults to Germany (DE) for phone prefix selection. */
+  geo?:       GeoContext | null | undefined;
   initialData: PatientBookingFormData | null;
   onSubmit:   (data: PatientBookingFormData) => void;
   isLoading:  boolean;
@@ -143,8 +145,10 @@ export function PatientInformation({
   isLoading,
   errorMsg,
 }: PatientInformationProps) {
-  const defaultCountry = PHONE_COUNTRIES.find((c) => c.code === geo.countryCode)
-    ?? PHONE_COUNTRIES.find((c) => c.prefix === geo.phonePrefix)
+  const safeGeo = geo ?? getGeoContext('DE');
+
+  const defaultCountry = PHONE_COUNTRIES.find((c) => c.code === safeGeo.countryCode)
+    ?? PHONE_COUNTRIES.find((c) => c.prefix === safeGeo.phonePrefix)
     ?? PHONE_COUNTRIES[0]!;
 
   const [form, setForm] = useState<PatientBookingFormData>(
