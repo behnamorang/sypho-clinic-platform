@@ -28,11 +28,25 @@ import type { ZodIssue } from 'zod';
 type FieldErrors = Partial<Record<keyof LoginFormValues, string>>;
 
 type AuthLikeError = {
-  message: string;
+  message?: string;
   name?: string;
   status?: number;
   code?: string;
 };
+
+/** Removes email-shaped substrings so server messages can be shown without leaking addresses. */
+function redactEmailLikeSegments(text: string): string {
+  return text.replace(/\b[^\s@]+@[^\s@]+\.[^\s@]+\b/gi, '[email]');
+}
+
+function signInErrorTechnicalHint(error: AuthLikeError): string {
+  const parts = [
+    typeof error.code === 'string' ? error.code : undefined,
+    typeof error.name === 'string' ? error.name : undefined,
+    typeof error.status === 'number' ? `HTTP ${error.status}` : undefined,
+  ].filter((p): p is string => Boolean(p));
+  return parts.length > 0 ? ` (${parts.join(' · ')})` : '';
+}
 
 /**
  * Maps Supabase / GoTrue sign-in errors to safe UI copy (no PII).
@@ -40,7 +54,7 @@ type AuthLikeError = {
  * `CustomAuthError` subclasses with only `name` + `message`, or legacy strings.
  */
 function mapSignInErrorMessage(error: AuthLikeError): string {
-  const rawMsg = error.message ?? '';
+  const rawMsg = typeof error.message === 'string' ? error.message : '';
   const msg = rawMsg.toLowerCase();
   const code = typeof error.code === 'string' ? error.code : undefined;
   const name = typeof error.name === 'string' ? error.name : undefined;
@@ -103,12 +117,13 @@ function mapSignInErrorMessage(error: AuthLikeError): string {
     return 'Email sign-in is disabled for this project. Contact support.';
   }
 
-  // Short, non-sensitive server messages only
-  if (rawMsg.length > 0 && rawMsg.length < 160 && !rawMsg.includes('@')) {
-    return `Sign-in failed: ${rawMsg}`;
+  // Short server messages — redact emails so GoTrue hints are visible
+  const redacted = redactEmailLikeSegments(rawMsg).trim();
+  if (redacted.length > 0 && redacted.length < 200) {
+    return `Sign-in failed: ${redacted}${signInErrorTechnicalHint(error)}`;
   }
 
-  return 'Sign-in failed. Please try again.';
+  return `Sign-in failed. Please try again.${signInErrorTechnicalHint(error)}`;
 }
 
 // ---------------------------------------------------------------------------
@@ -176,7 +191,7 @@ export function LoginForm({ redirectTo = '/dashboard' }: { redirectTo?: string }
     setIsPending(false);
 
     if (error) {
-      setServerError(mapSignInErrorMessage(error as AuthLikeError));
+      setServerError(mapSignInErrorMessage(error as unknown as AuthLikeError));
       return;
     }
 
