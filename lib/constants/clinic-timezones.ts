@@ -52,6 +52,7 @@ export const CLINIC_TIMEZONE_OPTIONS: ClinicTimezoneOption[] = [
   { value: 'Europe/Helsinki', label: '(UTC+2/+3) Helsinki (Finland)' },
   { value: 'Europe/Athens', label: '(UTC+2/+3) Athens (Greece)' },
   { value: 'Europe/Bucharest', label: '(UTC+2/+3) Bucharest (Romania)' },
+  { value: 'Europe/Istanbul', label: '(UTC+3) Istanbul (Turkey)' },
   { value: 'Europe/London', label: '(UTC+0/+1) London (UK)' },
   { value: 'Europe/Dublin', label: '(UTC+0/+1) Dublin (Ireland)' },
   { value: 'Europe/Lisbon', label: '(UTC+0/+1) Lisbon (Portugal)' },
@@ -108,5 +109,27 @@ export const CLINIC_TIMEZONE_OPTIONS: ClinicTimezoneOption[] = [
   { value: 'America/Denver', label: '(UTC-7/-6) Denver (US Mountain)' },
   { value: 'America/Los_Angeles', label: '(UTC-8/-7) Los Angeles (US Pacific)' },
   { value: 'America/Toronto', label: '(UTC-5/-4) Toronto (Canada Eastern)' },
+  { value: 'America/Mexico_City', label: '(UTC-6) Mexico City (Mexico)' },
   { value: 'America/Sao_Paulo', label: '(UTC-3) São Paulo (Brazil)' },
+
+  // -------------------------------------------------------------------------
+  // Atlantic
+  // -------------------------------------------------------------------------
+  { value: 'Atlantic/Reykjavik', label: '(UTC+0) Reykjavik (Iceland)' },
 ];
+
+/** Set of allowed IANA timezone values exposed in the clinic onboarding selector. */
+const CLINIC_TIMEZONE_IANA_VALUES = new Set(
+  CLINIC_TIMEZONE_OPTIONS.map((option) => option.value),
+);
+
+/**
+ * Returns the given IANA timezone when it exists in the curated onboarding list;
+ * otherwise falls back to Europe/Berlin (EU-safe default).
+ *
+ * @param preferred - Candidate IANA identifier (e.g. from IP-based country mapping).
+ * @returns A timezone string that is guaranteed to match a select option value.
+ */
+export function resolveClinicTimezoneIANA(preferred: string): string {
+  return CLINIC_TIMEZONE_IANA_VALUES.has(preferred) ? preferred : 'Europe/Berlin';
+}

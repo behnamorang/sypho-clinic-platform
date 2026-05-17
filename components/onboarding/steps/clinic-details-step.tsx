@@ -26,6 +26,10 @@ type FieldErrors = Partial<Record<keyof ClinicDetailsStepValues, string>>;
 
 export interface ClinicDetailsStepProps {
   initialValues?: Partial<ClinicDetailsStepValues> | undefined;
+  /** Applied when the user has not saved step 1 yet (from edge IP defaults). */
+  defaultTimezone?: string | undefined;
+  /** E.164 prefix including '+' — pre-fills phone and shapes the placeholder. */
+  defaultPhonePrefix?: string | undefined;
   onNext: (values: ClinicDetailsStepValues) => void;
 }
 
@@ -36,12 +40,31 @@ export interface ClinicDetailsStepProps {
 /**
  * Onboarding Step 1: Clinic basic information.
  */
-export function ClinicDetailsStep({ initialValues, onNext }: ClinicDetailsStepProps) {
+export function ClinicDetailsStep({
+  initialValues,
+  defaultTimezone,
+  defaultPhonePrefix,
+  onNext,
+}: ClinicDetailsStepProps) {
+  const resolvedTimezone =
+    initialValues?.timezone ?? defaultTimezone ?? 'Europe/Berlin';
+
+  const resolvedPhone =
+    initialValues?.clinic_phone ??
+    (defaultPhonePrefix !== undefined && defaultPhonePrefix.length > 0
+      ? `${defaultPhonePrefix} `
+      : '');
+
+  const phonePlaceholder =
+    defaultPhonePrefix !== undefined && defaultPhonePrefix.length > 0
+      ? `${defaultPhonePrefix} 30 12345678`
+      : '+49 30 12345678';
+
   const [values, setValues] = useState<ClinicDetailsStepValues>({
     clinic_name:  initialValues?.clinic_name  ?? '',
     clinic_email: initialValues?.clinic_email ?? '',
-    clinic_phone: initialValues?.clinic_phone ?? '',
-    timezone:     initialValues?.timezone     ?? 'Europe/Berlin',
+    clinic_phone: resolvedPhone,
+    timezone:     resolvedTimezone,
   });
 
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -107,7 +130,7 @@ export function ClinicDetailsStep({ initialValues, onNext }: ClinicDetailsStepPr
         onChange={handleChange}
         error={fieldErrors.clinic_phone}
         autoComplete="tel"
-        placeholder="+49 30 12345678"
+        placeholder={phonePlaceholder}
       />
 
       <Select

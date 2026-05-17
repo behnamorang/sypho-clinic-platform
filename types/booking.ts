@@ -34,6 +34,17 @@ export interface GeoContext {
   dateFormat:     'DD/MM/YYYY' | 'MM/DD/YYYY';
 }
 
+/**
+ * Geo-derived defaults for clinic onboarding (timezone, locale, phone, currency).
+ * Populated server-side from CDN / edge country detection — never trust client-only hints.
+ */
+export interface OnboardingGeoDefaults extends GeoContext {
+  /** Default IANA timezone for the detected country (always one of the curated clinic list). */
+  timezone: string;
+  /** BCP 47 locale for number/date formatting and document language during onboarding. */
+  locale: string;
+}
+
 // ---------------------------------------------------------------------------
 // PUBLIC CLINIC PROFILE — Safe subset of ClinicRow for public display
 // ---------------------------------------------------------------------------

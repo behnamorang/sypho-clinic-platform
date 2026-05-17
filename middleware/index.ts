@@ -182,13 +182,14 @@ function buildContentSecurityPolicy(): string {
  *
  * Execution order:
  * 1. Allow public bypass routes through immediately.
- * 2. Allow booking page routes through (public — no auth required).
- * 3. Refresh Supabase session and retrieve the current user.
- * 4. Apply protected-route guard (redirect unauthenticated users to /login).
- * 5. Apply onboarding guard for `/dashboard` only (incomplete onboarding → /onboarding).
- * 6. Redirect authenticated users away from auth pages.
- * 7. Inject geo country header for location-based personalization.
- * 8. Inject security headers.
+ * 2. Allow booking page routes through (public — no auth required) with geo on the request.
+ * 3. Forward `x-geo-country` on the request for all other routes (Server Components read via headers()).
+ * 4. Refresh Supabase session and retrieve the current user.
+ * 5. Apply protected-route guard (redirect unauthenticated users to /login).
+ * 6. Apply onboarding guard for `/dashboard` only (incomplete onboarding → /onboarding).
+ * 7. Redirect authenticated users away from auth pages.
+ * 8. Echo geo country on the response (optional for proxies / debugging).
+ * 9. Inject security headers.
  */
 export async function middleware(request: NextRequest): Promise<NextResponse> {
   const { pathname } = request.nextUrl;
@@ -227,12 +228,23 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   }
 
   // ---------------------------------------------------------------------------
+  // Step 0c: Forward resolved geo country on the *request* for all other routes.
+  // Server Components read `x-geo-country` via headers() — response headers are
+  // not visible there; mirroring the booking pattern keeps IP-based defaults consistent.
+  // ---------------------------------------------------------------------------
+  const geoCountry = detectCountryCode(request);
+  const geoRequestHeaders = new Headers(request.headers);
+  geoRequestHeaders.set('x-geo-country', geoCountry);
+
+  // ---------------------------------------------------------------------------
   // Step 1: Refresh Supabase session — MUST happen before any redirect logic.
   //         `updateSession` reads the existing JWT, validates it server-side,
   //         and refreshes it if expired. The returned `supabase` client uses
   //         the refreshed session for all subsequent calls in this request.
   // ---------------------------------------------------------------------------
-  let response = NextResponse.next({ request });
+  let response = NextResponse.next({
+    request: { headers: geoRequestHeaders },
+  });
   const sessionResult = await updateSession(request, response);
   response = sessionResult.response;
 
@@ -292,11 +304,9 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   }
 
   // ---------------------------------------------------------------------------
-  // Step 6: Inject geo header for all authenticated routes as well
-  // (useful for future dashboard geo features)
+  // Step 6: Echo geo country on the response (optional; clients / proxies).
   // ---------------------------------------------------------------------------
-  const countryCode = detectCountryCode(request);
-  response.headers.set('x-geo-country', countryCode);
+  response.headers.set('x-geo-country', geoCountry);
 
   // ---------------------------------------------------------------------------
   // Step 7: Inject security headers on all responses

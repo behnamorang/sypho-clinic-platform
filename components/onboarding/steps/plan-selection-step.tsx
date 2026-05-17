@@ -8,7 +8,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Button }                from '@/components/ui/button';
 import { Alert }                 from '@/components/ui/alert';
 import {
@@ -30,13 +30,24 @@ interface PlanDefinition {
   highlighted: boolean;
 }
 
-const PLANS: PlanDefinition[] = [
+interface PlanTemplate {
+  id:                 SubscriptionTierOption;
+  name:               string;
+  priceEurPerMonth:   number | null;
+  customPriceLabel:   string | null;
+  description:        string;
+  features:           string[];
+  highlighted:        boolean;
+}
+
+const PLAN_TEMPLATES: PlanTemplate[] = [
   {
-    id:          'free',
-    name:        'Free',
-    price:       '€0 / month',
-    description: 'Perfect for solo practitioners getting started.',
-    features:    [
+    id:               'free',
+    name:             'Free',
+    priceEurPerMonth: 0,
+    customPriceLabel: null,
+    description:      'Perfect for solo practitioners getting started.',
+    features:         [
       '1 doctor profile',
       'Up to 50 appointments/month',
       'Basic patient management',
@@ -45,11 +56,12 @@ const PLANS: PlanDefinition[] = [
     highlighted: false,
   },
   {
-    id:          'starter',
-    name:        'Starter',
-    price:       '€49 / month',
-    description: 'For small clinics with a growing patient base.',
-    features:    [
+    id:               'starter',
+    name:             'Starter',
+    priceEurPerMonth: 49,
+    customPriceLabel: null,
+    description:      'For small clinics with a growing patient base.',
+    features:         [
       'Up to 5 doctor profiles',
       'Unlimited appointments',
       'SMS + email reminders',
@@ -59,11 +71,12 @@ const PLANS: PlanDefinition[] = [
     highlighted: false,
   },
   {
-    id:          'professional',
-    name:        'Professional',
-    price:       '€149 / month',
-    description: 'For established clinics needing advanced features.',
-    features:    [
+    id:               'professional',
+    name:             'Professional',
+    priceEurPerMonth: 149,
+    customPriceLabel: null,
+    description:      'For established clinics needing advanced features.',
+    features:         [
       'Up to 20 doctor profiles',
       'Unlimited appointments',
       'Online patient booking',
@@ -75,11 +88,12 @@ const PLANS: PlanDefinition[] = [
     highlighted: true,
   },
   {
-    id:          'enterprise',
-    name:        'Enterprise',
-    price:       'Custom pricing',
-    description: 'For multi-site hospital groups and large practices.',
-    features:    [
+    id:               'enterprise',
+    name:             'Enterprise',
+    priceEurPerMonth: null,
+    customPriceLabel: 'Custom pricing',
+    description:      'For multi-site hospital groups and large practices.',
+    features:         [
       'Unlimited doctor profiles',
       'Multi-clinic management',
       'Dedicated account manager',
@@ -91,12 +105,53 @@ const PLANS: PlanDefinition[] = [
   },
 ];
 
+/**
+ * Formats recurring EUR prices using the visitor locale (digit grouping, separators).
+ *
+ * @param locale - BCP 47 locale from geo defaults.
+ * @param amountEur - Whole-euro monthly amount (billing currency remains EUR).
+ * @returns Localized currency string including EUR symbol.
+ */
+function formatEurPerMonth(locale: string, amountEur: number): string {
+  const amount = new Intl.NumberFormat(locale, {
+    style:                 'currency',
+    currency:              'EUR',
+    currencyDisplay:       'narrowSymbol',
+    maximumFractionDigits: 0,
+  }).format(amountEur);
+  return `${amount} / month`;
+}
+
+function buildPlanCards(displayLocale: string): PlanDefinition[] {
+  return PLAN_TEMPLATES.map((template) => {
+    const price =
+      template.customPriceLabel !== null
+        ? template.customPriceLabel
+        : template.priceEurPerMonth === null
+        ? 'Custom pricing'
+        : formatEurPerMonth(displayLocale, template.priceEurPerMonth);
+
+    return {
+      id:          template.id,
+      name:        template.name,
+      price,
+      description: template.description,
+      features:    template.features,
+      highlighted: template.highlighted,
+    };
+  });
+}
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
 export interface PlanSelectionStepProps {
   initialValues?: Partial<PlanSelectionStepValues> | undefined;
+  /** BCP 47 locale for EUR price formatting (from IP-based defaults). */
+  priceDisplayLocale: string;
+  /** ISO 4217 visitor currency (informational when different from EUR billing). */
+  visitorCurrencyCode: string;
   onNext:         (values: PlanSelectionStepValues) => void;
   onBack:         () => void;
   isSubmitting?:  boolean | undefined;
@@ -113,11 +168,18 @@ export interface PlanSelectionStepProps {
  */
 export function PlanSelectionStep({
   initialValues,
+  priceDisplayLocale,
+  visitorCurrencyCode,
   onNext,
   onBack,
   isSubmitting = false,
   submitError,
 }: PlanSelectionStepProps) {
+  const plans = useMemo(
+    () => buildPlanCards(priceDisplayLocale),
+    [priceDisplayLocale],
+  );
+
   const [selected, setSelected] = useState<SubscriptionTierOption>(
     initialValues?.subscription_tier ?? 'free',
   );
@@ -148,7 +210,7 @@ export function PlanSelectionStep({
       )}
 
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-        {PLANS.map((plan) => (
+        {plans.map((plan) => (
           <PlanCard
             key={plan.id}
             plan={plan}
@@ -158,6 +220,13 @@ export function PlanSelectionStep({
           />
         ))}
       </div>
+
+      {visitorCurrencyCode !== 'EUR' && (
+        <p className="text-xs text-surface-500 text-center leading-relaxed">
+          Subscription amounts are billed in euros (EUR). Your region typically uses{' '}
+          <span className="font-medium">{visitorCurrencyCode}</span> for local banking.
+        </p>
+      )}
 
       <p className="text-xs text-surface-500 text-center">
         You can change your plan at any time from your billing settings.

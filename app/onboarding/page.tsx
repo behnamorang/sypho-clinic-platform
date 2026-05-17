@@ -5,7 +5,7 @@
  * This Server Component:
  * 1. Verifies the user is authenticated (defense-in-depth; middleware handles primary check).
  * 2. Verifies onboarding has NOT been completed yet (prevents revisiting).
- * 3. Renders the multi-step OnboardingWizard client component.
+ * 3. Renders the multi-step OnboardingWizard client component with IP-derived defaults.
  *
  * The middleware sends users here when they are authenticated but
  * `app_metadata.onboarding_completed` is not `true`. Users who are marked
@@ -16,8 +16,10 @@
  */
 
 import type { Metadata }              from 'next';
+import { headers }                    from 'next/headers';
 import { redirect }                   from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { getOnboardingGeoDefaultsFromHeaders } from '@/lib/booking/geo';
 import {
   getAuthenticatedUser,
   getClinicMembership,
@@ -56,6 +58,8 @@ export default async function OnboardingPage() {
   const firstName = user.user_metadata?.['first_name'] as string | undefined;
   const greeting  = firstName ? `Let's set up ${firstName}'s clinic` : "Let's set up your clinic";
 
+  const geoDefaults = getOnboardingGeoDefaultsFromHeaders(await headers());
+
   return (
     <div className="w-full max-w-2xl mx-auto">
       {/* Greeting */}
@@ -73,7 +77,7 @@ export default async function OnboardingPage() {
       </div>
 
       {/* Onboarding wizard */}
-      <OnboardingWizard />
+      <OnboardingWizard geoDefaults={geoDefaults} />
     </div>
   );
 }

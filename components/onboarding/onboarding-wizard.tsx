@@ -7,6 +7,9 @@
  *   Step 2 — Clinic Location (country, address, city, postal code)
  *   Step 3 — Plan Selection (subscription tier)
  *
+ * Defaults for timezone, phone prefix, currency context, and document locale are
+ * derived server-side from edge geo headers and passed in as `geoDefaults`.
+ *
  * On completion, POSTs to /api/onboarding/complete and redirects to /dashboard.
  *
  * @compliance GDPR — country restricted to EU/EEA; audit log created server-side.
@@ -14,8 +17,10 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useLayoutEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { DATA_RESIDENCY } from '@/config/supabase';
+import type { OnboardingGeoDefaults } from '@/types/booking';
 import { ClinicDetailsStep }  from './steps/clinic-details-step';
 import { ClinicLocationStep } from './steps/clinic-location-step';
 import { PlanSelectionStep }  from './steps/plan-selection-step';
@@ -42,6 +47,12 @@ interface SubmitState {
   isSubmitting: boolean;
   error:        string | null;
 }
+
+interface OnboardingWizardProps {
+  geoDefaults: OnboardingGeoDefaults;
+}
+
+const EU_EEA_COUNTRY_CODES = DATA_RESIDENCY.SUPPORTED_COUNTRIES as readonly string[];
 
 // ---------------------------------------------------------------------------
 // Step metadata
@@ -73,8 +84,22 @@ const STEPS: { number: OnboardingStep; label: string; description: string }[] = 
  * Full multi-step onboarding wizard.
  * Manages step navigation, partial data accumulation, and final API submission.
  */
-export function OnboardingWizard() {
+export function OnboardingWizard({ geoDefaults }: OnboardingWizardProps) {
   const router = useRouter();
+
+  useLayoutEffect(() => {
+    const previousLang = document.documentElement.lang;
+    document.documentElement.lang = geoDefaults.locale;
+    return () => {
+      document.documentElement.lang = previousLang;
+    };
+  }, [geoDefaults.locale]);
+
+  const defaultLocationCountry = useMemo((): string => {
+    return EU_EEA_COUNTRY_CODES.includes(geoDefaults.countryCode)
+      ? geoDefaults.countryCode
+      : 'DE';
+  }, [geoDefaults.countryCode]);
 
   const [currentStep, setCurrentStep] = useState<OnboardingStep>(1);
   const [data, setData]               = useState<PartialOnboardingData>({});
@@ -235,6 +260,8 @@ export function OnboardingWizard() {
         {currentStep === 1 && (
           <ClinicDetailsStep
             initialValues={data.step1}
+            defaultTimezone={geoDefaults.timezone}
+            defaultPhonePrefix={geoDefaults.phonePrefix}
             onNext={handleStep1Next}
           />
         )}
@@ -242,6 +269,7 @@ export function OnboardingWizard() {
         {currentStep === 2 && (
           <ClinicLocationStep
             initialValues={data.step2}
+            defaultCountryCode={defaultLocationCountry}
             onNext={handleStep2Next}
             onBack={() => setCurrentStep(1)}
           />
@@ -250,6 +278,8 @@ export function OnboardingWizard() {
         {currentStep === 3 && (
           <PlanSelectionStep
             initialValues={data.step3}
+            priceDisplayLocale={geoDefaults.locale}
+            visitorCurrencyCode={geoDefaults.currencyCode}
             onNext={(values) => { void handleStep3Next(values); }}
             onBack={() => setCurrentStep(2)}
             isSubmitting={submitState.isSubmitting}

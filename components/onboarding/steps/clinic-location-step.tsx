@@ -51,6 +51,8 @@ type FieldErrors = Partial<Record<keyof ClinicLocationStepValues, string>>;
 
 export interface ClinicLocationStepProps {
   initialValues?: Partial<ClinicLocationStepValues> | undefined;
+  /** When step 2 has no saved country yet, defaults from IP if it is EU/EEA, else DE. */
+  defaultCountryCode?: string | undefined;
   onNext: (values: ClinicLocationStepValues) => void;
   onBack: () => void;
 }
@@ -65,11 +67,12 @@ export interface ClinicLocationStepProps {
  */
 export function ClinicLocationStep({
   initialValues,
+  defaultCountryCode,
   onNext,
   onBack,
 }: ClinicLocationStepProps) {
   const [values, setValues] = useState<ClinicLocationStepValues>({
-    country_code:  initialValues?.country_code  ?? 'DE',
+    country_code:  initialValues?.country_code ?? defaultCountryCode ?? 'DE',
     address_line1: initialValues?.address_line1 ?? '',
     address_line2: initialValues?.address_line2 ?? '',
     city:          initialValues?.city          ?? '',
