@@ -5,7 +5,7 @@
  * Responsibilities (in execution order):
  * 1. Refresh the Supabase Auth session on every request.
  * 2. Enforce authentication guards for protected routes.
- * 3. Enforce onboarding completion for clinic owners on first login.
+ * 3. Enforce onboarding completion for `/dashboard` only (incomplete → `/onboarding`).
  * 4. Prevent authenticated users from accessing auth pages (login/register).
  * 5. Inject strict security headers (CSP, HSTS, etc.) on every response.
  * 6. Detect visitor geolocation from CDN headers and forward as request headers.
@@ -46,6 +46,12 @@ import { updateSession }                  from '@/lib/supabase/middleware';
 // ---------------------------------------------------------------------------
 
 /**
+ * Public URL prefix for the clinic onboarding wizard.
+ * Filesystem: `app/onboarding/`.
+ */
+const ONBOARDING_ROUTE_PREFIX = '/onboarding';
+
+/**
  * Public URL prefix for authenticated clinic UI.
  * Filesystem: `app/(dashboard)/dashboard/` — route group `(dashboard)` is omitted from the path.
  */
@@ -59,7 +65,7 @@ function isDashboardPath(pathname: string): boolean {
 /** Routes that require a valid JWT session. */
 const PROTECTED_ROUTE_PREFIXES = [
   DASHBOARD_ROUTE_PREFIX,
-  '/onboarding',
+  ONBOARDING_ROUTE_PREFIX,
   '/api/clinics',
   '/api/doctors',
   '/api/patients',
@@ -270,14 +276,11 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     // Authenticated but onboarding not complete → /onboarding
     // Exception: /onboarding route itself is always allowed through
     if (!onboardingCompleted && isDashboardRoute) {
-      return NextResponse.redirect(new URL('/onboarding', request.url));
+      return NextResponse.redirect(new URL(ONBOARDING_ROUTE_PREFIX, request.url));
     }
 
-    // Do not redirect away from /onboarding when onboarding is already marked complete.
-    // `app/onboarding/page.tsx` decides whether to send the user to /dashboard after
-    // verifying clinic membership. A middleware redirect here used to fight with
-    // `app/(dashboard)/layout.tsx` (no membership → /onboarding), causing an infinite
-    // redirect loop and MIDDLEWARE_INVOCATION_FAILED on the edge.
+    // Never redirect /onboarding → /dashboard here. `app/onboarding/page.tsx` and
+    // `app/(dashboard)/layout.tsx` own that handoff (membership-aware) to avoid loops.
   }
 
   // ---------------------------------------------------------------------------
