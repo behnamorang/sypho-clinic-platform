@@ -16,6 +16,7 @@ import { Input }   from '@/components/ui/input';
 import { Button }  from '@/components/ui/button';
 import { Alert }   from '@/components/ui/alert';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
+import { getPublicAppOrigin } from '@/lib/utils/public-app-url';
 import { forgotPasswordSchema } from '@/lib/validations/auth';
 import type { ZodIssue } from 'zod';
 
@@ -59,7 +60,7 @@ export function ForgotPasswordForm() {
     const { error } = await supabase.auth.resetPasswordForEmail(
       parseResult.data.email,
       {
-        redirectTo: `${window.location.origin}/api/auth/callback?type=recovery`,
+        redirectTo: `${getPublicAppOrigin()}/api/auth/callback?type=recovery`,
       },
     );
 
