@@ -7,8 +7,10 @@
  * 2. Verifies onboarding has NOT been completed yet (prevents revisiting).
  * 3. Renders the multi-step OnboardingWizard client component.
  *
- * The middleware routes users here automatically when they are authenticated
- * but `app_metadata.onboarding_completed` is not `true`.
+ * The middleware sends users here when they are authenticated but
+ * `app_metadata.onboarding_completed` is not `true`. Users who are marked
+ * complete in Auth but still lack a clinic membership stay here so the wizard
+ * can finish — redirect to `/dashboard` only runs when membership exists.
  *
  * @compliance GDPR — no personal data is processed on this page; only auth check.
  */
@@ -16,7 +18,11 @@
 import type { Metadata }              from 'next';
 import { redirect }                   from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { getAuthenticatedUser, hasCompletedOnboarding } from '@/lib/auth/helpers';
+import {
+  getAuthenticatedUser,
+  getClinicMembership,
+  hasCompletedOnboarding,
+} from '@/lib/auth/helpers';
 import { OnboardingWizard }           from '@/components/onboarding/onboarding-wizard';
 
 export const metadata: Metadata = {
@@ -38,9 +44,13 @@ export default async function OnboardingPage() {
 
   const user = authResult.data;
 
-  // Redirect users who have already completed onboarding
+  // Only send to dashboard when auth metadata and DB agree (active membership).
+  // Otherwise the dashboard layout redirects back to /onboarding → infinite loop.
   if (hasCompletedOnboarding(user)) {
-    redirect('/dashboard');
+    const membershipResult = await getClinicMembership(supabase, user.id);
+    if (membershipResult.ok) {
+      redirect('/dashboard');
+    }
   }
 
   const firstName = user.user_metadata['first_name'] as string | undefined;

@@ -15,7 +15,9 @@
  * Route categories:
  * - PROTECTED:   Require authentication. Unauthenticated → /login.
  * - AUTH:        Login/register pages. Authenticated → /dashboard.
- * - ONBOARDING:  Requires authentication but NOT onboarding completion.
+ * - ONBOARDING:  Requires authentication; wizard vs /dashboard handoff is handled
+ *                in `app/onboarding/page.tsx` (with membership check) to avoid
+ *                redirect loops with the dashboard layout.
  * - BOOKING:     Fully public — no auth guard, no redirect.
  * - PUBLIC:      No guards applied.
  *
@@ -43,9 +45,20 @@ import { updateSession }                  from '@/lib/supabase/middleware';
 // Route configuration
 // ---------------------------------------------------------------------------
 
+/**
+ * Public URL prefix for authenticated clinic UI.
+ * Filesystem: `app/(dashboard)/dashboard/` — route group `(dashboard)` is omitted from the path.
+ */
+const DASHBOARD_ROUTE_PREFIX = '/dashboard';
+
+/** True when the pathname is the dashboard home or a nested dashboard route. */
+function isDashboardPath(pathname: string): boolean {
+  return pathname === DASHBOARD_ROUTE_PREFIX || pathname.startsWith(`${DASHBOARD_ROUTE_PREFIX}/`);
+}
+
 /** Routes that require a valid JWT session. */
 const PROTECTED_ROUTE_PREFIXES = [
-  '/dashboard',
+  DASHBOARD_ROUTE_PREFIX,
   '/onboarding',
   '/api/clinics',
   '/api/doctors',
@@ -165,8 +178,8 @@ function buildContentSecurityPolicy(): string {
  * 1. Allow public bypass routes through immediately.
  * 2. Allow booking page routes through (public — no auth required).
  * 3. Refresh Supabase session and retrieve the current user.
- * 4. Apply auth route guard (redirect unauthenticated users).
- * 5. Apply onboarding guard (redirect to /onboarding if not yet completed).
+ * 4. Apply protected-route guard (redirect unauthenticated users to /login).
+ * 5. Apply onboarding guard for `/dashboard` only (incomplete onboarding → /onboarding).
  * 6. Redirect authenticated users away from auth pages.
  * 7. Inject geo country header for location-based personalization.
  * 8. Inject security headers.
@@ -225,13 +238,12 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   // Step 2: Route classification
   // ---------------------------------------------------------------------------
   const isProtectedRoute  = PROTECTED_ROUTE_PREFIXES.some((prefix) =>
-    pathname.startsWith(prefix),
+    pathname === prefix || pathname.startsWith(`${prefix}/`),
   );
   const isAuthRoute       = AUTH_ROUTE_PREFIXES.some((prefix) =>
     pathname.startsWith(prefix),
   );
-  const isOnboardingRoute = pathname.startsWith('/onboarding');
-  const isDashboardRoute  = pathname.startsWith('/dashboard');
+  const isDashboardRoute  = isDashboardPath(pathname);
 
   // ---------------------------------------------------------------------------
   // Step 3: Authentication guard
@@ -261,10 +273,11 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
       return NextResponse.redirect(new URL('/onboarding', request.url));
     }
 
-    // Onboarding already complete → /dashboard (don't re-visit wizard)
-    if (onboardingCompleted && isOnboardingRoute) {
-      return NextResponse.redirect(new URL('/dashboard', request.url));
-    }
+    // Do not redirect away from /onboarding when onboarding is already marked complete.
+    // `app/onboarding/page.tsx` decides whether to send the user to /dashboard after
+    // verifying clinic membership. A middleware redirect here used to fight with
+    // `app/(dashboard)/layout.tsx` (no membership → /onboarding), causing an infinite
+    // redirect loop and MIDDLEWARE_INVOCATION_FAILED on the edge.
   }
 
   // ---------------------------------------------------------------------------
@@ -272,7 +285,7 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
   // Authenticated users should not see login/register pages → /dashboard
   // ---------------------------------------------------------------------------
   if (isAuthRoute && user) {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
+    return NextResponse.redirect(new URL(DASHBOARD_ROUTE_PREFIX, request.url));
   }
 
   // ---------------------------------------------------------------------------
