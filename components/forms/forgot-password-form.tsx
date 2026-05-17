@@ -3,7 +3,8 @@
  * @description Forgot password form — sends a password reset link to the user's email.
  *
  * Uses `supabase.auth.resetPasswordForEmail()` which triggers Supabase to send
- * a recovery email. The email link points to `/api/auth/callback?type=recovery`.
+ * a recovery email. The link targets `/api/auth/callback?type=recovery`; that
+ * URL must be allowed in Supabase → Authentication → URL Configuration → Redirect URLs.
  *
  * @compliance GDPR — no PII logged. Rate limiting on auth endpoints applies.
  */
@@ -16,7 +17,7 @@ import { Input }   from '@/components/ui/input';
 import { Button }  from '@/components/ui/button';
 import { Alert }   from '@/components/ui/alert';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import { getAuthEmailRedirectOrigin } from '@/lib/utils/public-app-url';
+import { resolveAuthCallbackUrl } from '@/lib/utils/public-app-url';
 import { forgotPasswordSchema } from '@/lib/validations/auth';
 import type { ZodIssue } from 'zod';
 
@@ -55,12 +56,18 @@ export function ForgotPasswordForm() {
     }
 
     setState({ status: 'submitting' });
+    const callback = resolveAuthCallbackUrl('?type=recovery');
+    if (!callback.ok) {
+      setState({ status: 'error', message: callback.message });
+      return;
+    }
+
     const supabase = createSupabaseBrowserClient();
 
     const { error } = await supabase.auth.resetPasswordForEmail(
       parseResult.data.email,
       {
-        redirectTo: `${getAuthEmailRedirectOrigin()}/api/auth/callback?type=recovery`,
+        redirectTo: callback.url,
       },
     );
 

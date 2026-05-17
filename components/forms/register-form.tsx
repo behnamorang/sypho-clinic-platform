@@ -21,7 +21,7 @@ import { Input }   from '@/components/ui/input';
 import { Button }  from '@/components/ui/button';
 import { Alert }   from '@/components/ui/alert';
 import { createSupabaseBrowserClient } from '@/lib/supabase/client';
-import { getAuthEmailRedirectOrigin } from '@/lib/utils/public-app-url';
+import { resolveAuthCallbackUrl } from '@/lib/utils/public-app-url';
 import { registerSchema, type RegisterFormValues } from '@/lib/validations/auth';
 import type { ZodIssue } from 'zod';
 
@@ -74,6 +74,17 @@ function mapRegisterSupabaseError(error: AuthLikeError): string {
 
   if (code === 'signup_disabled' || msg.includes('signup is disabled')) {
     return 'New registrations are disabled for this project. Contact support.';
+  }
+
+  if (
+    msg.includes('redirect') &&
+    (msg.includes('invalid') || msg.includes('not allowed') || msg.includes('disallowed'))
+  ) {
+    return (
+      'Supabase rejected the email redirect URL. In the Supabase dashboard open Authentication → ' +
+      'URL Configuration → Redirect URLs, add your site callback (for example …/api/auth/callback), ' +
+      'save, then try again.'
+    );
   }
 
   if (
@@ -177,15 +188,18 @@ export function RegisterForm() {
     }
 
     setState({ status: 'submitting' });
+    const callback = resolveAuthCallbackUrl();
+    if (!callback.ok) {
+      setState({ status: 'error', message: callback.message });
+      return;
+    }
     const supabase = createSupabaseBrowserClient();
-
-    const redirectUrl = `${getAuthEmailRedirectOrigin()}/api/auth/callback`;
 
     const { data, error } = await supabase.auth.signUp({
       email:    parseResult.data.email,
       password: parseResult.data.password,
       options:  {
-        emailRedirectTo: redirectUrl,
+        emailRedirectTo: callback.url,
         data: {
           first_name: parseResult.data.first_name,
           last_name:  parseResult.data.last_name,
@@ -221,13 +235,18 @@ export function RegisterForm() {
     }
     setResendState('sending');
     setResendMessage(null);
+    const callback = resolveAuthCallbackUrl();
+    if (!callback.ok) {
+      setResendState('error');
+      setResendMessage(callback.message);
+      return;
+    }
     const supabase = createSupabaseBrowserClient();
-    const redirectUrl = `${getAuthEmailRedirectOrigin()}/api/auth/callback`;
     const { error } = await supabase.auth.resend({
       type:  'signup',
       email: state.email,
       options: {
-        emailRedirectTo: redirectUrl,
+        emailRedirectTo: callback.url,
       },
     });
     if (error) {
@@ -283,7 +302,9 @@ export function RegisterForm() {
           Resend confirmation email
         </Button>
         <p className="text-surface-500 text-xs mt-4">
-          If nothing arrives, your project may have hit Supabase email limits — wait and try resend, or review Auth logs in the Supabase dashboard.
+          If nothing arrives, confirm in Supabase (Authentication → URL Configuration) that Redirect
+          URLs includes this site&apos;s <span className="font-mono">/api/auth/callback</span> path,
+          check spam, and review Auth logs. Email rate limits can also delay delivery.
         </p>
       </div>
     );
