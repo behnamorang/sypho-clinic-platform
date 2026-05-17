@@ -76,8 +76,14 @@ function mapRegisterSupabaseError(error: AuthLikeError): string {
     return 'New registrations are disabled for this project. Contact support.';
   }
 
-  if (code === 'over_request_rate_limit' || error.status === 429 || msg.includes('rate limit')) {
-    return 'Too many registration attempts. Wait a few minutes and try again.';
+  if (
+    code === 'over_request_rate_limit' ||
+    code === 'over_email_send_rate_limit' ||
+    error.status === 429 ||
+    msg.includes('rate limit') ||
+    msg.includes('email rate limit')
+  ) {
+    return 'Too many emails sent from this project. Wait up to an hour, then try again or check Supabase Auth logs.';
   }
 
   if (code === 'weak_password' || msg.includes('weak password')) {
@@ -124,6 +130,8 @@ export function RegisterForm() {
 
   const [fieldErrors, setFieldErrors]   = useState<FieldErrors>({});
   const [state, setState]               = useState<RegistrationState>({ status: 'idle' });
+  const [resendState, setResendState]   = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const [resendMessage, setResendMessage] = useState<string | null>(null);
 
   // ---------------------------------------------------------------------------
   // Handlers
@@ -148,6 +156,8 @@ export function RegisterForm() {
     event.preventDefault();
     setState({ status: 'idle' });
     setFieldErrors({});
+    setResendState('idle');
+    setResendMessage(null);
 
     // Cast consent to the literal true type for Zod
     const valuesToValidate = {
@@ -169,11 +179,13 @@ export function RegisterForm() {
     setState({ status: 'submitting' });
     const supabase = createSupabaseBrowserClient();
 
-    const { error } = await supabase.auth.signUp({
+    const redirectUrl = `${getAuthEmailRedirectOrigin()}/api/auth/callback`;
+
+    const { data, error } = await supabase.auth.signUp({
       email:    parseResult.data.email,
       password: parseResult.data.password,
       options:  {
-        emailRedirectTo: `${getAuthEmailRedirectOrigin()}/api/auth/callback`,
+        emailRedirectTo: redirectUrl,
         data: {
           first_name: parseResult.data.first_name,
           last_name:  parseResult.data.last_name,
@@ -189,7 +201,42 @@ export function RegisterForm() {
       return;
     }
 
+    if (!data.user) {
+      setState({
+        status:  'error',
+        message:
+          'Registration could not be completed. Check Supabase URL configuration and Auth logs, then try again.',
+      });
+      return;
+    }
+
+    setResendState('idle');
+    setResendMessage(null);
     setState({ status: 'success', email: parseResult.data.email });
+  }
+
+  async function handleResendConfirmation(): Promise<void> {
+    if (state.status !== 'success') {
+      return;
+    }
+    setResendState('sending');
+    setResendMessage(null);
+    const supabase = createSupabaseBrowserClient();
+    const redirectUrl = `${getAuthEmailRedirectOrigin()}/api/auth/callback`;
+    const { error } = await supabase.auth.resend({
+      type:  'signup',
+      email: state.email,
+      options: {
+        emailRedirectTo: redirectUrl,
+      },
+    });
+    if (error) {
+      setResendState('error');
+      setResendMessage(mapRegisterSupabaseError(error as unknown as AuthLikeError));
+      return;
+    }
+    setResendState('sent');
+    setResendMessage('Another confirmation email has been sent.');
   }
 
   // ---------------------------------------------------------------------------
@@ -213,8 +260,30 @@ export function RegisterForm() {
         <p className="font-semibold text-surface-900 text-sm mb-4">
           {state.email}
         </p>
-        <p className="text-surface-500 text-xs">
+        <p className="text-surface-500 text-xs mb-6">
           Click the link in the email to activate your account. The link expires in 24 hours.
+          Check your spam folder. Delivery can take a few minutes.
+        </p>
+        {resendMessage && (
+          <Alert variant={resendState === 'error' ? 'error' : 'info'} className="mb-4 text-left">
+            {resendMessage}
+          </Alert>
+        )}
+        <Button
+          type="button"
+          variant="secondary"
+          fullWidth
+          isLoading={resendState === 'sending'}
+          loadingLabel="Sending…"
+          disabled={resendState === 'sending'}
+          onClick={() => {
+            void handleResendConfirmation();
+          }}
+        >
+          Resend confirmation email
+        </Button>
+        <p className="text-surface-500 text-xs mt-4">
+          If nothing arrives, your project may have hit Supabase email limits — wait and try resend, or review Auth logs in the Supabase dashboard.
         </p>
       </div>
     );
