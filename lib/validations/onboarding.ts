@@ -5,25 +5,23 @@
  * Each step has its own schema. The complete onboarding schema is the
  * intersection of all step schemas, validated at the API boundary.
  *
- * @compliance GDPR — country_code must be within EU/EEA per data residency requirements.
+ * @compliance Clinic `country_code` uses ISO 3166-1 alpha-2 (assigned codes only).
+ *             Patient data is still stored in EU regions; UI surfaces residency notes.
  */
 
 import { z } from 'zod';
-import { DATA_RESIDENCY } from '@/config/supabase';
+import { isValidIso3166Alpha2 } from '@/lib/constants/iso-3166-countries';
 
 // ---------------------------------------------------------------------------
 // Shared constraints
 // ---------------------------------------------------------------------------
 
-/** Allowed EU/EEA country codes (ISO 3166-1 alpha-2) from the config. */
-const EU_COUNTRY_CODES = DATA_RESIDENCY.SUPPORTED_COUNTRIES as readonly string[];
-
-const euCountryCodeSchema = z
+const iso3166CountryCodeSchema = z
   .string()
   .length(2, 'Please select a country.')
   .refine(
-    (val) => EU_COUNTRY_CODES.includes(val.toUpperCase()),
-    { message: 'Country must be within the EU/EEA for GDPR data residency compliance.' },
+    (val) => isValidIso3166Alpha2(val),
+    { message: 'Please select a valid country.' },
   )
   .transform((val) => val.toUpperCase());
 
@@ -69,10 +67,10 @@ export type ClinicDetailsStepValues = z.infer<typeof clinicDetailsStepSchema>;
 // ---------------------------------------------------------------------------
 
 /**
- * Step 2 — Clinic address and country (data residency critical).
+ * Step 2 — Clinic address and country (ISO 3166-1 alpha-2).
  */
 export const clinicLocationStepSchema = z.object({
-  country_code: euCountryCodeSchema,
+  country_code: iso3166CountryCodeSchema,
 
   address_line1: z
     .string()

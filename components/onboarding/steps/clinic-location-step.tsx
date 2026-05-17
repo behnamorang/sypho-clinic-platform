@@ -2,15 +2,13 @@
  * @file components/onboarding/steps/clinic-location-step.tsx
  * @description Step 2 of the clinic onboarding wizard — clinic address.
  *
- * Captures: country (EU/EEA only for GDPR), address, city, postal code.
- * Country selection is restricted to EU/EEA member states per data residency requirements.
- *
- * @compliance GDPR — data must remain in EU/EEA jurisdiction.
+ * Captures: country (ISO 3166-1 alpha-2 worldwide list), address, city, postal code.
+ * Non-EU/EEA selections show an additional compliance notice; patient data remains in EU regions.
  */
 
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Input }    from '@/components/ui/input';
 import { Select }   from '@/components/ui/select';
 import { Button }   from '@/components/ui/button';
@@ -20,28 +18,22 @@ import {
   type ClinicLocationStepValues,
 } from '@/lib/validations/onboarding';
 import { DATA_RESIDENCY } from '@/config/supabase';
+import {
+  ISO_3166_1_ALPHA2_CODES,
+  ISO_3166_1_ALPHA2_EN,
+} from '@/lib/constants/iso-3166-countries';
 import type { ZodIssue } from 'zod';
 
 // ---------------------------------------------------------------------------
-// Country options (EU/EEA only)
+// Country options (ISO 3166-1 alpha-2, English labels)
 // ---------------------------------------------------------------------------
 
-const COUNTRY_NAMES: Record<string, string> = {
-  AT: 'Austria',         BE: 'Belgium',        BG: 'Bulgaria',
-  CY: 'Cyprus',          CZ: 'Czech Republic', DE: 'Germany',
-  DK: 'Denmark',         EE: 'Estonia',        ES: 'Spain',
-  FI: 'Finland',         FR: 'France',         GR: 'Greece',
-  HR: 'Croatia',         HU: 'Hungary',        IE: 'Ireland',
-  IT: 'Italy',           LT: 'Lithuania',      LU: 'Luxembourg',
-  LV: 'Latvia',          MT: 'Malta',          NL: 'Netherlands',
-  PL: 'Poland',          PT: 'Portugal',       RO: 'Romania',
-  SE: 'Sweden',          SI: 'Slovenia',       SK: 'Slovakia',
-  IS: 'Iceland (EEA)',   LI: 'Liechtenstein (EEA)', NO: 'Norway (EEA)',
-};
+const EU_EEA_CODES = new Set<string>(DATA_RESIDENCY.SUPPORTED_COUNTRIES as readonly string[]);
 
-const COUNTRY_OPTIONS = [...DATA_RESIDENCY.SUPPORTED_COUNTRIES]
-  .sort((a, b) => (COUNTRY_NAMES[a] ?? a).localeCompare(COUNTRY_NAMES[b] ?? b))
-  .map((code) => ({ value: code, label: COUNTRY_NAMES[code] ?? code }));
+const COUNTRY_OPTIONS = ISO_3166_1_ALPHA2_CODES.map((code) => ({
+  value: code,
+  label: ISO_3166_1_ALPHA2_EN[code] ?? code,
+}));
 
 // ---------------------------------------------------------------------------
 // Types
@@ -51,7 +43,7 @@ type FieldErrors = Partial<Record<keyof ClinicLocationStepValues, string>>;
 
 export interface ClinicLocationStepProps {
   initialValues?: Partial<ClinicLocationStepValues> | undefined;
-  /** When step 2 has no saved country yet, defaults from IP if it is EU/EEA, else DE. */
+  /** When step 2 has no saved country yet, defaults from geo when it is a valid ISO code, else DE. */
   defaultCountryCode?: string | undefined;
   onNext: (values: ClinicLocationStepValues) => void;
   onBack: () => void;
@@ -63,7 +55,6 @@ export interface ClinicLocationStepProps {
 
 /**
  * Onboarding Step 2: Clinic address and country.
- * Country is restricted to EU/EEA to enforce GDPR data residency.
  */
 export function ClinicLocationStep({
   initialValues,
@@ -94,6 +85,11 @@ export function ClinicLocationStep({
     });
   }, []);
 
+  const isOutsideEuEea = useMemo(
+    () => !EU_EEA_CODES.has(values.country_code),
+    [values.country_code],
+  );
+
   function handleNext(): void {
     const parseResult = clinicLocationStepSchema.safeParse(values);
     if (!parseResult.success) {
@@ -111,9 +107,18 @@ export function ClinicLocationStep({
   return (
     <div className="space-y-5">
       <Alert variant="info">
-        <span className="font-medium">GDPR data residency:</span> Sypho stores all patient data
-        exclusively within EU/EEA data centers. Clinic registration is limited to EU/EEA countries.
+        <span className="font-medium">Data residency:</span> Patient data in Sypho is processed and
+        stored in EU-based infrastructure. You may select any ISO country for your clinic&apos;s
+        registered address; this does not change where health data is hosted.
       </Alert>
+
+      {isOutsideEuEea && (
+        <Alert variant="warning">
+          <span className="font-medium">Outside EU/EEA:</span> Your clinic country is not in the
+          EU/EEA. You remain responsible for local licensing and privacy obligations when using an
+          EU-hosted service.
+        </Alert>
+      )}
 
       <Select
         label="Country"
@@ -145,7 +150,7 @@ export function ClinicLocationStep({
         onChange={handleChange}
         error={fieldErrors.address_line2}
         autoComplete="address-line2"
-        placeholder="Building, floor, suite…"
+        placeholder="Building, floor, suite..."
       />
 
       <div className="grid grid-cols-2 gap-4">

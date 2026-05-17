@@ -12,14 +12,14 @@
  *
  * On completion, POSTs to /api/onboarding/complete and redirects to /dashboard.
  *
- * @compliance GDPR — country restricted to EU/EEA; audit log created server-side.
+ * @compliance GDPR — patient processing in EU infrastructure; clinic address may be any ISO country.
  */
 
 'use client';
 
 import { useLayoutEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { DATA_RESIDENCY } from '@/config/supabase';
+import { isValidIso3166Alpha2 } from '@/lib/constants/iso-3166-countries';
 import type { OnboardingGeoDefaults } from '@/types/booking';
 import { ClinicDetailsStep }  from './steps/clinic-details-step';
 import { ClinicLocationStep } from './steps/clinic-location-step';
@@ -51,8 +51,6 @@ interface SubmitState {
 interface OnboardingWizardProps {
   geoDefaults: OnboardingGeoDefaults;
 }
-
-const EU_EEA_COUNTRY_CODES = DATA_RESIDENCY.SUPPORTED_COUNTRIES as readonly string[];
 
 // ---------------------------------------------------------------------------
 // Step metadata
@@ -96,8 +94,8 @@ export function OnboardingWizard({ geoDefaults }: OnboardingWizardProps) {
   }, [geoDefaults.locale]);
 
   const defaultLocationCountry = useMemo((): string => {
-    return EU_EEA_COUNTRY_CODES.includes(geoDefaults.countryCode)
-      ? geoDefaults.countryCode
+    return isValidIso3166Alpha2(geoDefaults.countryCode)
+      ? geoDefaults.countryCode.toUpperCase()
       : 'DE';
   }, [geoDefaults.countryCode]);
 
