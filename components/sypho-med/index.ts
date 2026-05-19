@@ -18,3 +18,8 @@ export { MedButton } from '@/components/sypho-med/med-button';
 export type { MedButtonProps, MedButtonVariant, MedButtonSize } from '@/components/sypho-med/med-button';
 
 export { LandingShell } from '@/components/sypho-med/landing-shell';
+
+export { MockDashboard } from '@/components/sypho-med/demo/mock-dashboard';
+export type { MockDashboardProps } from '@/components/sypho-med/demo/mock-dashboard';
+
+export { DemoProvider, useDemo } from '@/components/sypho-med/demo/demo-context';
