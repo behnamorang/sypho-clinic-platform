@@ -47,7 +47,22 @@ const nextConfig = {
         process.env.NEXT_PUBLIC_APP_URL ?? '',
       ].filter(Boolean),
     },
+    /**
+     * Next.js 14 defaults this to true: `useSearchParams()` without a parent
+     * Suspense boundary fails the production build. Set to false to restore
+     * warning-only behavior (page may deopt to client rendering).
+     * Does not affect `cookies()` / `headers()` from `next/headers`.
+     * @see https://nextjs.org/docs/messages/missing-suspense-with-csr-bailout
+     */
+    missingSuspenseWithCSRBailout: false,
   },
+
+  /**
+   * Seconds allowed per page during the static generation phase before the
+   * build aborts that page. Helps slow CI; unrelated to dynamic API detection.
+   * @default 60
+   */
+  staticPageGenerationTimeout: 120,
 
   /**
    * Restrict image optimization to trusted domains only.
