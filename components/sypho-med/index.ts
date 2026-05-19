@@ -23,3 +23,5 @@ export { MockDashboard } from '@/components/sypho-med/demo/mock-dashboard';
 export type { MockDashboardProps } from '@/components/sypho-med/demo/mock-dashboard';
 
 export { DemoProvider, useDemo } from '@/components/sypho-med/demo/demo-context';
+
+export { LandingFeatures } from '@/components/sypho-med/features/landing-features';

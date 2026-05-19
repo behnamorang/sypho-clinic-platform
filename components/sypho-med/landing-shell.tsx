@@ -9,6 +9,7 @@ import { useCallback, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { SyphoMedHeader } from '@/components/sypho-med/header';
 import { HeroSection } from '@/components/sypho-med/hero-section';
+import { LandingFeatures } from '@/components/sypho-med/features/landing-features';
 import { DemoPlaceholder } from '@/components/sypho-med/demo-placeholder';
 
 type ViewMode = 'landing' | 'demo';
@@ -49,6 +50,10 @@ export function LandingShell() {
             />
             <main>
               <HeroSection
+                onLaunchDemo={launchDemo}
+                onBookConsultation={bookConsultation}
+              />
+              <LandingFeatures
                 onLaunchDemo={launchDemo}
                 onBookConsultation={bookConsultation}
               />
