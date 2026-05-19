@@ -1,28 +1,29 @@
 /**
  * @file app/page.tsx
- * @description Root entry point — redirects to /dashboard for authenticated users
- * or /login for unauthenticated users.
+ * @description Sypho Med marketing home — premium cinematic landing with one-click demo.
  *
- * The actual redirect logic is handled by middleware (cookie-based session check).
- * This page acts as a fallback redirect to ensure no blank screen is shown.
+ * Replaces the legacy auth redirect. Authenticated users can still access
+ * `/dashboard` directly; the home page is a public marketing surface.
  */
 
-import { redirect } from 'next/navigation';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import type { Metadata } from 'next';
+import { LandingShell } from '@/components/sypho-med/landing-shell';
 
-/** Session is read from cookies via `createSupabaseServerClient()` — not statically prerenderable. */
-export const dynamic = 'force-dynamic';
+export const metadata: Metadata = {
+  title: 'Sypho Med — Autonomous Operating System for Clinics',
+  description:
+    'Premium clinic operations platform with voice AI reception, unified inbox, and intelligent scheduling for high-performance EU clinics.',
+  openGraph: {
+    title: 'Sypho Med',
+    description:
+      'The autonomous operating system for high-performance clinics.',
+    type: 'website',
+  },
+};
 
 /**
- * Root page — performs server-side redirect based on auth state.
+ * Public marketing landing — client shell handles demo transition.
  */
-export default async function RootPage() {
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-
-  if (user) {
-    redirect('/dashboard');
-  }
-
-  redirect('/login');
+export default function HomePage() {
+  return <LandingShell />;
 }

@@ -100,3 +100,32 @@
   from { opacity: 0; transform: translateY(8px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* ---------------------------------------------------------------------------
+ * Sypho Med — premium dark marketing surfaces
+ * ---------------------------------------------------------------------------
+ */
+
+@layer utilities {
+  .med-glass {
+    @apply bg-obsidian-100/60 backdrop-blur-xl border border-white/[0.06];
+  }
+
+  .med-glass-strong {
+    @apply bg-obsidian-200/80 backdrop-blur-2xl border border-white/[0.08];
+  }
+
+  .med-text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-b from-white via-silver-200 to-silver-400;
+  }
+
+  .med-shimmer-border {
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(34, 211, 238, 0.35),
+      transparent
+    );
+    background-size: 200% 100%;
+  }
+}

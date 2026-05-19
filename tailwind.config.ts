@@ -81,6 +81,41 @@ const config: Config = {
           600: '#dc2626',
           700: '#b91c1c',
         },
+
+        /** Sypho Med — premium dark marketing surface palette */
+        obsidian: {
+          DEFAULT: '#050506',
+          50:  '#0c0c0e',
+          100: '#111114',
+          200: '#18181c',
+          300: '#222228',
+          400: '#2e2e36',
+          500: '#3d3d48',
+        },
+
+        /** Futuristic neon cyan/teal accents (low saturation) */
+        neon: {
+          50:  '#ecfeff',
+          100: '#cffafe',
+          200: '#a5f3fc',
+          300: '#67e8f9',
+          400: '#38bdf8',
+          500: '#22d3ee',
+          600: '#06b6d4',
+          700: '#0891b2',
+          800: '#0e7490',
+          900: '#155e75',
+        },
+
+        silver: {
+          50:  '#f8fafc',
+          100: '#f1f5f9',
+          200: '#e2e8f0',
+          300: '#cbd5e1',
+          400: '#94a3b8',
+          500: '#64748b',
+          600: '#475569',
+        },
       },
 
       fontFamily: {
@@ -104,6 +139,10 @@ const config: Config = {
       animation: {
         'fade-in': 'fadeIn 0.3s ease-out',
         'slide-up': 'slideUp 0.3s ease-out',
+        'sypho-pulse': 'syphoPulse 3s ease-in-out infinite',
+        'float-slow': 'floatSlow 8s ease-in-out infinite',
+        'float-slower': 'floatSlower 12s ease-in-out infinite',
+        'shimmer': 'shimmer 3s linear infinite',
       },
 
       keyframes: {
@@ -115,6 +154,41 @@ const config: Config = {
           '0%': { opacity: '0', transform: 'translateY(8px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
         },
+        syphoPulse: {
+          '0%, 100%': {
+            opacity: '1',
+            transform: 'scale(1)',
+            boxShadow: '0 0 10px 2px rgba(56, 189, 248, 0.55)',
+          },
+          '50%': {
+            opacity: '0.35',
+            transform: 'scale(0.92)',
+            boxShadow: '0 0 4px 1px rgba(56, 189, 248, 0.15)',
+          },
+        },
+        floatSlow: {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-12px)' },
+        },
+        floatSlower: {
+          '0%, 100%': { transform: 'translateY(0px) rotate(-1deg)' },
+          '50%': { transform: 'translateY(-8px) rotate(1deg)' },
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '200% center' },
+          '100%': { backgroundPosition: '-200% center' },
+        },
+      },
+
+      backgroundImage: {
+        'med-grid':
+          'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
+        'med-radial':
+          'radial-gradient(ellipse 80% 50% at 50% -20%, rgba(34, 211, 238, 0.12), transparent)',
+      },
+
+      backgroundSize: {
+        'med-grid': '64px 64px',
       },
     },
   },
