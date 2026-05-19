@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
+    "db:migrate:remote": "tsx database/scripts/apply-migrations-remote.ts",
     "db:seed:demo": "tsx database/scripts/seed-dashboard-demo.ts"
   },
   "dependencies": {
@@ -24,8 +25,10 @@
     "@types/react-dom": "^18.3.0",
     "autoprefixer": "^10.4.20",
     "dotenv": "^17.4.2",
+    "@types/pg": "^8.15.5",
     "eslint": "^8.57.1",
     "eslint-config-next": "14.2.29",
+    "pg": "^8.16.0",
     "postcss": "^8.4.45",
     "tailwindcss": "^3.4.11",
     "tsx": "^4.22.1",
