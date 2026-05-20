@@ -25,3 +25,8 @@ export type { MockDashboardProps } from '@/components/sypho-med/demo/mock-dashbo
 export { DemoProvider, useDemo } from '@/components/sypho-med/demo/demo-context';
 
 export { LandingFeatures } from '@/components/sypho-med/features/landing-features';
+
+export { MarketingPlaceholderPage } from '@/components/sypho-med/marketing/marketing-placeholder-page';
+export type { MarketingPlaceholderPageProps } from '@/components/sypho-med/marketing/marketing-placeholder-page';
+
+export { MarketingSiteHeader } from '@/components/sypho-med/marketing/marketing-site-header';
