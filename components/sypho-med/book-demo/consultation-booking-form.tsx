@@ -17,13 +17,15 @@ import {
   CLINIC_LOCATION_LABELS,
   CLINIC_LOCATIONS,
   PAIN_POINT_OPTIONS,
-  step1Schema,
-  step2Schema,
-  step3Schema,
   type ClinicLocation,
   type ConsultationLeadFormData,
   type PainPointId,
 } from '@/lib/sypho-med/book-demo-types';
+import {
+  step1Schema,
+  step2Schema,
+  step3Schema,
+} from '@/lib/sypho-med/book-demo-schemas';
 import { saveConsultationLead } from '@/lib/sypho-med/lead-storage';
 
 const STEPS = [
