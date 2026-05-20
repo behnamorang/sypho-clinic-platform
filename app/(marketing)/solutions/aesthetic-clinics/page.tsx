@@ -1,26 +1,25 @@
 /**
  * @file app/(marketing)/solutions/aesthetic-clinics/page.tsx
- * @description Vertical solution page for aesthetic clinics — placeholder.
+ * @description Vertical solution page for premium aesthetic and wellness centers.
  */
 
 import type { Metadata } from 'next';
-import { MarketingPlaceholderPage } from '@/components/sypho-med/marketing/marketing-placeholder-page';
+import { AestheticClinicsPage } from '@/components/sypho-med/solutions/aesthetic-clinics-page';
 
 export const metadata: Metadata = {
   title: 'Aesthetic Clinics',
   description:
-    'Sypho Med for aesthetic and cosmetic clinics — autonomous reception, WhatsApp CRM, and premium booking workflows.',
+    'Sypho Med for aesthetic and wellness centers in London and Muscat — WhatsApp inquiry-to-booking automation, autonomous reception, and premium CRM.',
+  openGraph: {
+    title: 'Sypho Med · Aesthetic Clinics',
+    description: 'The custom operating system for premium aesthetic centers.',
+    type: 'website',
+  },
 };
 
 /**
  * Solutions vertical — `/solutions/aesthetic-clinics`
  */
-export default function AestheticClinicsPage() {
-  return (
-    <MarketingPlaceholderPage
-      eyebrow="Solutions · Aesthetic clinics"
-      headline="Built for high-touch aesthetic operations"
-      description="From first WhatsApp enquiry to post-treatment follow-up — orchestrate voice AI, pipeline CRM, and surgeon rotas in one calm, premium workspace."
-    />
-  );
+export default function AestheticClinicsSolutionPage() {
+  return <AestheticClinicsPage />;
 }

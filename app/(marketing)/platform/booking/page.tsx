@@ -1,26 +1,25 @@
 /**
  * @file app/(marketing)/platform/booking/page.tsx
- * @description Platform booking feature deep dive — placeholder.
+ * @description Platform booking feature deep dive — intelligent scheduling engine.
  */
 
 import type { Metadata } from 'next';
-import { MarketingPlaceholderPage } from '@/components/sypho-med/marketing/marketing-placeholder-page';
+import { BookingPlatformPage } from '@/components/sypho-med/platform/booking-platform-page';
 
 export const metadata: Metadata = {
   title: 'Clinic Booking',
   description:
-    'Cal.com-grade scheduling with doctor rotas, service-aware slots, and patient confirmations for EU healthcare clinics.',
+    'Cal.com-grade scheduling with multi-location calendars, doctor rotas, and automated No-Show Reduction for EU healthcare clinics.',
+  openGraph: {
+    title: 'Sypho Med · Clinic Booking',
+    description: 'Intelligent scheduling and no-show reduction for premium clinics.',
+    type: 'website',
+  },
 };
 
 /**
  * Platform booking — `/platform/booking`
  */
 export default function PlatformBookingPage() {
-  return (
-    <MarketingPlaceholderPage
-      eyebrow="Platform · Booking"
-      headline="Scheduling engineered for clinical rotas"
-      description="Service durations, doctor availability matrices, and instant confirmations across WhatsApp, email, and calendar — designed for UK and GCC clinic operations."
-    />
-  );
+  return <BookingPlatformPage />;
 }
