@@ -62,7 +62,7 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
   const userRole   = membership.role;
 
   return (
-    <div className="flex h-screen overflow-hidden bg-surface-50">
+    <div className="flex h-screen overflow-hidden bg-[#050506] text-white antialiased">
       {/* Sidebar — desktop permanent, mobile slide-in drawer */}
       <Sidebar
         clinicName={clinicName}

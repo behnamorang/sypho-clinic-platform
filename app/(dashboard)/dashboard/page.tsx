@@ -1,177 +1,210 @@
 /**
  * @file app/(dashboard)/dashboard/page.tsx
- * @description Main dashboard home page for Sypho.io — Phase 3.
- *
- * Shows a high-level overview:
- * - Welcome greeting with clinic name and user role
- * - Today's appointment quick-stats
- * - Quick-access navigation cards to major features
- *
- * @compliance GDPR — only non-sensitive clinic metadata and aggregated counts.
- *             No patient PII is displayed on this overview page.
+ * @description Enterprise control room home — authenticated Sypho Med dashboard.
  */
 
-import Link      from 'next/link';
-import { redirect }                          from 'next/navigation';
-import { createSupabaseServerClient }        from '@/lib/supabase/server';
-import { getAuthenticatedUser, getClinicMembership } from '@/lib/auth/helpers';
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import {
+  Calendar,
+  Clock,
+  LayoutGrid,
+  Shield,
+  Stethoscope,
+  Users,
+} from 'lucide-react';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { getClinicMembership } from '@/lib/auth/helpers';
+import type { LucideIcon } from 'lucide-react';
 
-// ---------------------------------------------------------------------------
-// Page
-// ---------------------------------------------------------------------------
+export const dynamic = 'force-dynamic';
 
 /**
- * Dashboard home — Server Component.
- * Fetches clinic stats for today's appointments and renders the overview.
+ * Dashboard home — Server Component with Supabase auth and clinic aggregates.
  */
 export default async function DashboardPage() {
-  const supabase   = await createSupabaseServerClient();
-  const authResult = await getAuthenticatedUser(supabase);
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  if (!authResult.ok) {
+  if (!user) {
     redirect('/login?error=session_expired');
   }
 
-  const user = authResult.data;
-
   const membershipResult = await getClinicMembership(supabase, user.id);
-  const membership       = membershipResult.ok ? membershipResult.data : null;
+  const membership = membershipResult.ok ? membershipResult.data : null;
 
-  // Fetch clinic details.
-  let clinicName:     string | null = null;
-  let totalPatients:  number        = 0;
-  let totalDoctors:   number        = 0;
-  let todayAppts:     number        = 0;
-  let pendingAppts:   number        = 0;
+  let clinicName: string | null = null;
+  let totalPatients = 0;
+  let totalDoctors = 0;
+  let todayAppts = 0;
+  let pendingAppts = 0;
 
   if (membership) {
     const clinicId = membership.clinic_id;
-
-    // Today's date range
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     const todayEnd = new Date();
     todayEnd.setHours(23, 59, 59, 999);
 
-    const [clinicResRaw, patientsRes, doctorsRes, todayRes, pendingRes] = await Promise.all([
-      supabase
-        .from('clinics')
-        .select('name')
-        .eq('id', clinicId)
-        .maybeSingle(),
-
-      supabase
-        .from('patients')
-        .select('id', { count: 'exact', head: true })
-        .eq('clinic_id', clinicId)
-        .is('deleted_at', null),
-
-      supabase
-        .from('doctors')
-        .select('id', { count: 'exact', head: true })
-        .eq('clinic_id', clinicId)
-        .eq('is_active', true),
-
-      supabase
-        .from('appointments')
-        .select('id', { count: 'exact', head: true })
-        .eq('clinic_id', clinicId)
-        .is('deleted_at', null)
-        .gte('scheduled_at', todayStart.toISOString())
-        .lte('scheduled_at', todayEnd.toISOString()),
-
-      supabase
-        .from('appointments')
-        .select('id', { count: 'exact', head: true })
-        .eq('clinic_id', clinicId)
-        .is('deleted_at', null)
-        .eq('status', 'pending'),
-    ]);
+    const [clinicResRaw, patientsRes, doctorsRes, todayRes, pendingRes] =
+      await Promise.all([
+        supabase.from('clinics').select('name').eq('id', clinicId).maybeSingle(),
+        supabase
+          .from('patients')
+          .select('id', { count: 'exact', head: true })
+          .eq('clinic_id', clinicId)
+          .is('deleted_at', null),
+        supabase
+          .from('doctors')
+          .select('id', { count: 'exact', head: true })
+          .eq('clinic_id', clinicId)
+          .eq('is_active', true),
+        supabase
+          .from('appointments')
+          .select('id', { count: 'exact', head: true })
+          .eq('clinic_id', clinicId)
+          .is('deleted_at', null)
+          .gte('scheduled_at', todayStart.toISOString())
+          .lte('scheduled_at', todayEnd.toISOString()),
+        supabase
+          .from('appointments')
+          .select('id', { count: 'exact', head: true })
+          .eq('clinic_id', clinicId)
+          .is('deleted_at', null)
+          .eq('status', 'pending'),
+      ]);
 
     const clinicRes = clinicResRaw as { data: { name: string } | null; error: unknown };
-    clinicName    = clinicRes.data?.name ?? null;
+    clinicName = clinicRes.data?.name ?? null;
     totalPatients = patientsRes.count ?? 0;
-    totalDoctors  = doctorsRes.count  ?? 0;
-    todayAppts    = todayRes.count    ?? 0;
-    pendingAppts  = pendingRes.count  ?? 0;
+    totalDoctors = doctorsRes.count ?? 0;
+    todayAppts = todayRes.count ?? 0;
+    pendingAppts = pendingRes.count ?? 0;
   }
 
   const displayName =
-    (user.user_metadata?.['first_name'] as string | undefined)
-    ?? user.email?.split('@')[0]
-    ?? 'there';
+    (user.user_metadata?.['first_name'] as string | undefined) ??
+    user.email?.split('@')[0] ??
+    'Operator';
 
-  const today = new Date().toLocaleDateString('en-US', {
+  const userEmail = user.email ?? '';
+  const todayLabel = new Date().toLocaleDateString('en-GB', {
     weekday: 'long',
-    month:   'long',
-    day:     'numeric',
+    month: 'long',
+    day: 'numeric',
   });
 
   return (
-    <div className="px-6 py-8 max-w-5xl mx-auto w-full">
-      {/* Welcome header */}
-      <div className="mb-8">
-        <p className="text-sm text-surface-500 mb-1">{today}</p>
-        <h1 className="text-2xl font-bold text-surface-900">
+    <div className="px-4 sm:px-6 lg:px-8 py-8 max-w-6xl mx-auto w-full">
+      <header className="mb-8 sm:mb-10">
+        <p className="text-[10px] uppercase tracking-[0.18em] text-neon-400/80 mb-2">
+          Enterprise control room
+        </p>
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight med-text-gradient">
           Good {getGreeting()}, {displayName}
         </h1>
-        {clinicName && (
-          <p className="text-surface-500 mt-1">{clinicName}</p>
-        )}
-        {membership && (
-          <span className="inline-flex items-center mt-2 px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-100 text-brand-700 capitalize">
-            {membership.role.replace(/_/g, ' ')}
-          </span>
-        )}
+        <p className="text-sm text-silver-500 mt-2">{todayLabel}</p>
+        <div className="mt-4 flex flex-wrap items-center gap-3 text-xs">
+          {clinicName !== null && (
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full med-glass border border-white/[0.08] text-silver-300">
+              <Stethoscope className="w-3.5 h-3.5 text-neon-400" aria-hidden="true" />
+              {clinicName}
+            </span>
+          )}
+          {membership && (
+            <span className="inline-flex px-3 py-1 rounded-full bg-neon-500/10 border border-neon-400/20 text-neon-300 capitalize">
+              {membership.role.replace(/_/g, ' ')}
+            </span>
+          )}
+          <span className="text-silver-600 truncate max-w-[240px]">{userEmail}</span>
+        </div>
+      </header>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-8 sm:mb-10">
+        <StatCard
+          label="Today's appointments"
+          value={todayAppts}
+          icon={Calendar}
+          accent="neon"
+        />
+        <StatCard
+          label="Pending review"
+          value={pendingAppts}
+          icon={Clock}
+          accent="amber"
+        />
+        <StatCard
+          label="Active patients"
+          value={totalPatients}
+          icon={Users}
+          accent="silver"
+        />
+        <StatCard
+          label="Active doctors"
+          value={totalDoctors}
+          icon={Stethoscope}
+          accent="neon"
+        />
       </div>
 
-      {/* Stats row */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
-        <StatCard label="Today's Appointments" value={todayAppts} icon={<CalendarIcon />} color="brand" />
-        <StatCard label="Pending Review"        value={pendingAppts} icon={<ClockIcon />}    color="warning" />
-        <StatCard label="Active Patients"       value={totalPatients} icon={<UsersIcon />}    color="accent" />
-        <StatCard label="Active Doctors"        value={totalDoctors}  icon={<DoctorIcon />}   color="success" />
-      </div>
-
-      {/* Quick access grid */}
-      <h2 className="text-sm font-semibold text-surface-700 mb-4 uppercase tracking-wide">
-        Quick Access
-      </h2>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {FEATURE_LINKS.map((feature) => (
-          <Link
-            key={feature.href}
-            href={feature.href}
-            className={[
-              'group bg-white rounded-xl border border-surface-200 p-5',
-              'hover:border-brand-300 hover:shadow-card-md transition-all',
-              feature.disabled ? 'opacity-60 pointer-events-none' : '',
-            ].join(' ')}
-            aria-disabled={feature.disabled}
-            tabIndex={feature.disabled ? -1 : undefined}
-          >
-            <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${feature.iconBg}`}>
-              {feature.icon}
-            </div>
-            <h3 className="font-semibold text-surface-900 text-sm mb-1 group-hover:text-brand-700 transition-colors">
-              {feature.title}
-            </h3>
-            <p className="text-surface-500 text-xs leading-relaxed">{feature.description}</p>
-            {feature.disabled && (
-              <span className="inline-block mt-3 text-xs font-medium text-surface-400 bg-surface-100 px-2 py-0.5 rounded">
-                Coming soon
+      <section aria-labelledby="integrations-heading">
+        <h2
+          id="integrations-heading"
+          className="text-xs font-medium text-silver-500 uppercase tracking-wider mb-4"
+        >
+          Clinic integrations
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {INTEGRATIONS.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={[
+                'group rounded-2xl p-5 border border-white/[0.06] med-glass',
+                'hover:border-neon-400/25 hover:bg-neon-500/[0.04] transition-all duration-200',
+                item.disabled ? 'opacity-50 pointer-events-none' : '',
+              ].join(' ')}
+              aria-disabled={item.disabled}
+            >
+              <span
+                className={[
+                  'flex items-center justify-center w-10 h-10 rounded-xl mb-4 border',
+                  item.iconWrap,
+                ].join(' ')}
+              >
+                <item.icon className="w-5 h-5" aria-hidden="true" />
               </span>
-            )}
-          </Link>
-        ))}
+              <h3 className="text-sm font-medium text-white group-hover:text-neon-300 transition-colors">
+                {item.title}
+              </h3>
+              <p className="text-xs text-silver-500 mt-1.5 leading-relaxed">
+                {item.description}
+              </p>
+              {item.disabled && (
+                <span className="inline-block mt-3 text-[10px] uppercase tracking-wider text-silver-600">
+                  Coming soon
+                </span>
+              )}
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <div className="mt-10 rounded-2xl p-5 sm:p-6 border border-neon-400/15 bg-neon-500/5 flex items-start gap-3">
+        <Shield className="w-5 h-5 text-neon-400 shrink-0 mt-0.5" aria-hidden="true" />
+        <div>
+          <p className="text-sm font-medium text-white">Workspace secured</p>
+          <p className="text-xs text-silver-500 mt-1 leading-relaxed">
+            Session validated via Supabase Auth. All clinic data routes enforce row-level
+            security and EU residency policies.
+          </p>
+        </div>
       </div>
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 function getGreeting(): string {
   const hour = new Date().getHours();
@@ -180,149 +213,83 @@ function getGreeting(): string {
   return 'evening';
 }
 
-// ---------------------------------------------------------------------------
-// Components
-// ---------------------------------------------------------------------------
-
 interface StatCardProps {
   label: string;
   value: number;
-  icon:  React.ReactNode;
-  color: 'brand' | 'warning' | 'accent' | 'success';
+  icon: LucideIcon;
+  accent: 'neon' | 'amber' | 'silver';
 }
 
-const STAT_COLORS: Record<StatCardProps['color'], { bg: string; text: string }> = {
-  brand:   { bg: 'bg-brand-50',   text: 'text-brand-700'   },
-  warning: { bg: 'bg-amber-50',   text: 'text-amber-700'   },
-  accent:  { bg: 'bg-accent-50',  text: 'text-accent-700'  },
-  success: { bg: 'bg-success-50', text: 'text-success-700' },
+const ACCENT: Record<StatCardProps['accent'], string> = {
+  neon: 'text-neon-400 bg-neon-500/10 border-neon-400/20',
+  amber: 'text-amber-400 bg-amber-500/10 border-amber-400/20',
+  silver: 'text-silver-400 bg-white/5 border-white/10',
 };
 
-function StatCard({ label, value, icon, color }: StatCardProps) {
-  const colors = STAT_COLORS[color];
+function StatCard({ label, value, icon: Icon, accent }: StatCardProps) {
   return (
-    <div className="bg-white rounded-xl border border-surface-200 p-5 shadow-card">
-      <div className={`w-9 h-9 rounded-lg flex items-center justify-center mb-3 ${colors.bg}`}>
-        <span className={colors.text}>{icon}</span>
-      </div>
-      <p className={`text-2xl font-bold ${colors.text}`}>{value}</p>
-      <p className="text-xs text-surface-500 mt-0.5">{label}</p>
+    <div className="rounded-2xl p-4 sm:p-5 border border-white/[0.06] med-glass-strong">
+      <span
+        className={[
+          'inline-flex items-center justify-center w-9 h-9 rounded-lg border mb-3',
+          ACCENT[accent],
+        ].join(' ')}
+      >
+        <Icon className="w-4 h-4" aria-hidden="true" />
+      </span>
+      <p className="text-2xl font-semibold text-white tabular-nums">{value}</p>
+      <p className="text-[10px] text-silver-500 mt-1 uppercase tracking-wider">{label}</p>
     </div>
   );
 }
 
-// ---------------------------------------------------------------------------
-// Feature link data
-// ---------------------------------------------------------------------------
-
-const FEATURE_LINKS = [
+const INTEGRATIONS = [
   {
-    href:        '/dashboard/calendar',
-    title:       'Appointment Calendar',
-    description: 'Schedule, manage, and track appointments with the interactive drag-and-drop calendar.',
-    iconBg:      'bg-brand-50',
-    disabled:    false,
-    icon: (
-      <svg className="w-5 h-5 text-brand-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-      </svg>
-    ),
+    href: '/dashboard/calendar',
+    title: 'Appointment calendar',
+    description: 'Schedule and manage clinical appointments with drag-and-drop.',
+    icon: Calendar,
+    iconWrap: 'text-neon-400 bg-neon-500/10 border-neon-400/20',
+    disabled: false,
   },
   {
-    href:        '/dashboard/patients',
-    title:       'Patient Management',
-    description: 'GDPR-compliant patient records with full rights management and audit trails.',
-    iconBg:      'bg-accent-50',
-    disabled:    true,
-    icon: (
-      <svg className="w-5 h-5 text-accent-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-      </svg>
-    ),
+    href: '/dashboard/patients',
+    title: 'Patient records',
+    description: 'GDPR-scoped patient management with audit trails.',
+    icon: Users,
+    iconWrap: 'text-silver-400 bg-white/5 border-white/10',
+    disabled: true,
   },
   {
-    href:        '/dashboard/doctors',
-    title:       'Doctor Profiles',
-    description: 'Manage doctor availability, specialties, and appointment type configurations.',
-    iconBg:      'bg-violet-50',
-    disabled:    true,
-    icon: (
-      <svg className="w-5 h-5 text-violet-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-      </svg>
-    ),
+    href: '/dashboard/doctors',
+    title: 'Doctor profiles',
+    description: 'Rota, specialties, and availability configuration.',
+    icon: Stethoscope,
+    iconWrap: 'text-silver-400 bg-white/5 border-white/10',
+    disabled: true,
   },
   {
-    href:        '/dashboard/analytics',
-    title:       'Analytics & Reports',
-    description: 'Clinic performance metrics, appointment statistics, and compliance reports.',
-    iconBg:      'bg-amber-50',
-    disabled:    true,
-    icon: (
-      <svg className="w-5 h-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-      </svg>
-    ),
+    href: '/dashboard/analytics',
+    title: 'Analytics',
+    description: 'Performance metrics and compliance reporting.',
+    icon: LayoutGrid,
+    iconWrap: 'text-silver-400 bg-white/5 border-white/10',
+    disabled: true,
   },
   {
-    href:        '/dashboard/gdpr',
-    title:       'GDPR Tools',
-    description: 'Patient data export, consent management, and rights-exercise request workflows.',
-    iconBg:      'bg-success-50',
-    disabled:    true,
-    icon: (
-      <svg className="w-5 h-5 text-success-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-      </svg>
-    ),
+    href: '/dashboard/gdpr',
+    title: 'GDPR tools',
+    description: 'Consent, export, and data subject request workflows.',
+    icon: Shield,
+    iconWrap: 'text-neon-400 bg-neon-500/10 border-neon-400/20',
+    disabled: true,
   },
   {
-    href:        '/dashboard/settings',
-    title:       'Clinic Settings',
-    description: 'Manage clinic profile, business hours, team members, and billing.',
-    iconBg:      'bg-surface-100',
-    disabled:    true,
-    icon: (
-      <svg className="w-5 h-5 text-surface-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-        <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-        <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-      </svg>
-    ),
+    href: '/dashboard/settings',
+    title: 'Clinic settings',
+    description: 'Team, billing, and business hours.',
+    icon: LayoutGrid,
+    iconWrap: 'text-silver-400 bg-white/5 border-white/10',
+    disabled: true,
   },
 ] as const;
-
-// ---------------------------------------------------------------------------
-// Icon components
-// ---------------------------------------------------------------------------
-
-function CalendarIcon() {
-  return (
-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-    </svg>
-  );
-}
-
-function ClockIcon() {
-  return (
-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
-  );
-}
-
-function UsersIcon() {
-  return (
-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
-    </svg>
-  );
-}
-
-function DoctorIcon() {
-  return (
-    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-    </svg>
-  );
-}
