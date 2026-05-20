@@ -1,26 +1,25 @@
 /**
  * @file app/(marketing)/book-demo/page.tsx
- * @description Unified high-converting lead capture — placeholder.
+ * @description Multi-step private consultation booking — high-converting lead capture.
  */
 
 import type { Metadata } from 'next';
-import { MarketingPlaceholderPage } from '@/components/sypho-med/marketing/marketing-placeholder-page';
+import { ConsultationBookingForm } from '@/components/sypho-med/book-demo/consultation-booking-form';
 
 export const metadata: Metadata = {
-  title: 'Book a Demo',
+  title: 'Book a Private Consultation',
   description:
-    'Schedule a private consultation or launch the instant interactive demo for Sypho Med.',
+    'Request a bespoke Sypho Med consultation for your clinic. Secure onboarding with instant access to the live demo workspace.',
+  openGraph: {
+    title: 'Book a Private Consultation | Sypho Med',
+    description: 'Luxury clinic operators — secure your bespoke workspace.',
+    type: 'website',
+  },
 };
 
 /**
  * Lead capture route — `/book-demo`
  */
 export default function BookDemoPage() {
-  return (
-    <MarketingPlaceholderPage
-      eyebrow="Book demo"
-      headline="See Sypho Med on your terms"
-      description="Private consultation for clinic leadership teams, or jump straight into our frictionless instant demo — no sign-up required."
-    />
-  );
+  return <ConsultationBookingForm />;
 }

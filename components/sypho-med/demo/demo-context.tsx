@@ -72,32 +72,37 @@ function cloneMessagesFromPreset(
 
 export interface DemoProviderProps {
   children: ReactNode;
+  /** Optional clinic preset from consultation lead handoff. */
+  initialClinicId?: ClinicPresetId;
 }
 
 /**
  * Provides all mock dashboard state — no external data sources.
  */
-export function DemoProvider({ children }: DemoProviderProps) {
-  const [clinicId, setClinicIdState] = useState<ClinicPresetId>('london');
+export function DemoProvider({
+  children,
+  initialClinicId = 'london',
+}: DemoProviderProps) {
+  const [clinicId, setClinicIdState] = useState<ClinicPresetId>(initialClinicId);
   const [activeView, setActiveView] = useState<DemoViewId>('overview');
   const [pipelineCards, setPipelineCards] = useState<PipelineCard[]>(() =>
-    clonePipelineFromPreset('london'),
+    clonePipelineFromPreset(initialClinicId),
   );
   const [selectedDoctorId, setSelectedDoctorId] = useState<string | null>(
-    () => getClinicPreset('london').doctors[0]?.id ?? null,
+    () => getClinicPreset(initialClinicId).doctors[0]?.id ?? null,
   );
   const [selectedServiceId, setSelectedServiceId] = useState<string | null>(
-    () => getClinicPreset('london').services[0]?.id ?? null,
+    () => getClinicPreset(initialClinicId).services[0]?.id ?? null,
   );
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const [bookingStep, setBookingStep] = useState(1);
   const [bookingConfirmed, setBookingConfirmed] = useState(false);
   const [selectedThreadId, setSelectedThreadId] = useState<string | null>(
-    () => getClinicPreset('london').inboxThreads[0]?.id ?? null,
+    () => getClinicPreset(initialClinicId).inboxThreads[0]?.id ?? null,
   );
   const [localActivities, setLocalActivities] = useState<DemoActivity[]>([]);
   const [localMessages, setLocalMessages] = useState<Record<string, DemoInboxMessage[]>>(
-    () => cloneMessagesFromPreset('london'),
+    () => cloneMessagesFromPreset(initialClinicId),
   );
 
   const preset = useMemo(() => getClinicPreset(clinicId), [clinicId]);

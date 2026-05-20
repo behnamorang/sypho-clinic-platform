@@ -16,17 +16,26 @@ import { OverviewView } from '@/components/sypho-med/demo/views/overview-view';
 import { PipelineView } from '@/components/sypho-med/demo/views/pipeline-view';
 import { BookingView } from '@/components/sypho-med/demo/views/booking-view';
 import { InboxView } from '@/components/sypho-med/demo/views/inbox-view';
+import { DemoWelcomeBanner } from '@/components/sypho-med/demo/demo-welcome-banner';
+import type { ClinicPresetId } from '@/lib/sypho-med/demo/types';
 
 export interface MockDashboardProps {
   onExitDemo: () => void;
+  /** Clinic preset seeded from consultation lead, if available. */
+  initialClinicId?: ClinicPresetId;
 }
 
 /**
  * Interactive demo dashboard with clinic presets and local state.
  */
-export function MockDashboard({ onExitDemo }: MockDashboardProps) {
+export function MockDashboard({
+  onExitDemo,
+  initialClinicId,
+}: MockDashboardProps) {
   return (
-    <DemoProvider>
+    <DemoProvider
+      {...(initialClinicId !== undefined ? { initialClinicId } : {})}
+    >
       <MockDashboardInner onExitDemo={onExitDemo} />
     </DemoProvider>
   );
@@ -73,6 +82,8 @@ function MockDashboardInner({ onExitDemo }: MockDashboardProps) {
           </div>
         </div>
       </header>
+
+      <DemoWelcomeBanner />
 
       <div className="flex flex-1 min-h-0 overflow-hidden">
         <DemoSidebar />
