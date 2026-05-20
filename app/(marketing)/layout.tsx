@@ -5,6 +5,7 @@
  * Route group `(marketing)` is omitted from URLs — e.g. `pricing/page.tsx` → `/pricing`.
  */
 
+import '@/app/globals.css';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -20,7 +21,7 @@ interface MarketingLayoutProps {
  */
 export default function MarketingLayout({ children }: MarketingLayoutProps) {
   return (
-    <div className="min-h-[100dvh] bg-obsidian text-white antialiased">
+    <div className="min-h-[100dvh] bg-[#050506] text-white font-sans antialiased">
       {children}
     </div>
   );
