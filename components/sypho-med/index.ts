@@ -1,0 +1,36 @@
+/**
+ * @file components/sypho-med/index.ts
+ * @description Public exports for Sypho Med marketing and demo surfaces.
+ */
+
+export { SyphoMedLogo } from '@/components/sypho-med/logo';
+export type { SyphoMedLogoProps, SyphoMedLogoSize } from '@/components/sypho-med/logo';
+
+export { SyphoMedHeader } from '@/components/sypho-med/header';
+export type { SyphoMedHeaderProps } from '@/components/sypho-med/header';
+
+export { HeroSection } from '@/components/sypho-med/hero-section';
+export type { HeroSectionProps } from '@/components/sypho-med/hero-section';
+
+export { HeroDashboardMockup } from '@/components/sypho-med/hero-dashboard-mockup';
+
+export { MedButton } from '@/components/sypho-med/med-button';
+export type { MedButtonProps, MedButtonVariant, MedButtonSize } from '@/components/sypho-med/med-button';
+
+export { LandingShell } from '@/components/sypho-med/landing-shell';
+
+export { MockDashboard } from '@/components/sypho-med/demo/mock-dashboard';
+export type { MockDashboardProps } from '@/components/sypho-med/demo/mock-dashboard';
+
+export { DemoProvider, useDemo } from '@/components/sypho-med/demo/demo-context';
+
+export { LandingFeatures } from '@/components/sypho-med/features/landing-features';
+
+export { MarketingPlaceholderPage } from '@/components/sypho-med/marketing/marketing-placeholder-page';
+export type { MarketingPlaceholderPageProps } from '@/components/sypho-med/marketing/marketing-placeholder-page';
+
+export { MarketingSiteHeader } from '@/components/sypho-med/marketing/marketing-site-header';
+
+export { PricingModule } from '@/components/sypho-med/pricing/pricing-module';
+
+export { ConsultationBookingForm } from '@/components/sypho-med/book-demo/consultation-booking-form';

@@ -1,14 +1,12 @@
 /**
  * @file middleware.ts
- * @description Next.js Middleware entry point for Sypho.io.
+ * @description Next.js Middleware entry — session refresh and route guards.
  *
- * This file is the required entry point for Next.js middleware
- * (must be at the project root, adjacent to app/).
+ * CRITICAL: All `/dashboard` and `/dashboard/*` routes require a valid Supabase
+ * session. Unauthenticated visitors are redirected to `/login` with the original
+ * path preserved as `?redirect=`.
  *
- * Implementation lives in middleware/index.ts for better organization.
- * This file simply re-exports the middleware function and config.
- *
- * @see middleware/index.ts for the full implementation.
+ * Implementation: `middleware/index.ts`
  */
 
 export { middleware, config } from './middleware/index';

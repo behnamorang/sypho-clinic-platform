@@ -102,20 +102,20 @@ function SidebarContent({ clinicName, userEmail, userRole, onClose }: SidebarPro
   return (
     <div className="flex flex-col h-full">
       {/* Brand / Logo */}
-      <div className="flex items-center gap-3 px-5 py-5 border-b border-surface-100">
-        <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center flex-shrink-0">
-          <svg className="w-4.5 h-4.5 text-white w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
+      <div className="flex items-center gap-3 px-5 py-5 border-b border-white/[0.06]">
+        <div className="w-8 h-8 bg-neon-500/20 border border-neon-400/25 rounded-lg flex items-center justify-center flex-shrink-0">
+          <svg className="w-5 h-5 text-neon-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
         </div>
         <div className="min-w-0">
-          <p className="text-base font-bold text-surface-900 leading-tight">Sypho</p>
-          <p className="text-xs text-surface-400 truncate">{clinicName}</p>
+          <p className="text-base font-bold text-white leading-tight">Sypho Med</p>
+          <p className="text-xs text-silver-500 truncate">{clinicName}</p>
         </div>
         {onClose && (
           <button
             onClick={onClose}
-            className="ml-auto p-1.5 rounded-lg hover:bg-surface-100 text-surface-400 hover:text-surface-700 transition-colors lg:hidden"
+            className="ml-auto p-1.5 rounded-lg hover:bg-white/[0.06] text-silver-500 hover:text-white transition-colors lg:hidden"
             aria-label="Close sidebar"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -138,11 +138,11 @@ function SidebarContent({ clinicName, userEmail, userRole, onClose }: SidebarPro
               className={[
                 'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                 active
-                  ? 'bg-brand-50 text-brand-700'
-                  : 'text-surface-600 hover:bg-surface-100 hover:text-surface-900',
+                  ? 'bg-neon-500/10 text-neon-300 border border-neon-400/20'
+                  : 'text-silver-400 hover:bg-white/[0.04] hover:text-white border border-transparent',
               ].join(' ')}
             >
-              <span className={active ? 'text-brand-600' : 'text-surface-400 group-hover:text-surface-600'}>
+              <span className={active ? 'text-neon-400' : 'text-silver-500'}>
                 {item.icon}
               </span>
               {item.label}
@@ -152,25 +152,25 @@ function SidebarContent({ clinicName, userEmail, userRole, onClose }: SidebarPro
       </nav>
 
       {/* User info + Sign out */}
-      <div className="border-t border-surface-100 px-3 py-4">
+      <div className="border-t border-white/[0.06] px-3 py-4">
         <div className="flex items-center gap-3 px-3 py-2 mb-1">
-          <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center flex-shrink-0">
-            <span className="text-xs font-semibold text-brand-700 uppercase">
+          <div className="w-8 h-8 rounded-full bg-neon-500/15 border border-neon-400/20 flex items-center justify-center flex-shrink-0">
+            <span className="text-xs font-semibold text-neon-300 uppercase">
               {(userEmail[0] ?? 'U').toUpperCase()}
             </span>
           </div>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-surface-800 truncate">{userEmail}</p>
-            <p className="text-xs text-surface-400 capitalize">{roleLabel}</p>
+            <p className="text-sm font-medium text-silver-300 truncate">{userEmail}</p>
+            <p className="text-xs text-silver-500 capitalize">{roleLabel}</p>
           </div>
         </div>
 
         <form action="/api/auth/signout" method="POST">
           <button
             type="submit"
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-surface-600 hover:bg-surface-100 hover:text-surface-900 transition-colors"
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-silver-400 hover:bg-white/[0.04] hover:text-white transition-colors"
           >
-            <svg className="w-5 h-5 text-surface-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
+            <svg className="w-5 h-5 text-silver-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
             </svg>
             Sign out
@@ -198,7 +198,7 @@ export function Sidebar({ clinicName, userEmail, userRole }: SidebarProps) {
     <>
       {/* ── Desktop sidebar ──────────────────────────────────────────────── */}
       <aside
-        className="hidden lg:flex flex-col w-64 flex-shrink-0 bg-white border-r border-surface-200 h-screen sticky top-0 z-30"
+        className="hidden lg:flex flex-col w-64 flex-shrink-0 med-glass-strong border-r border-white/[0.06] h-screen sticky top-0 z-30"
         aria-label="Sidebar"
       >
         <SidebarContent
@@ -211,7 +211,7 @@ export function Sidebar({ clinicName, userEmail, userRole }: SidebarProps) {
       {/* ── Mobile hamburger button ───────────────────────────────────────── */}
       <button
         onClick={() => setMobileOpen(true)}
-        className="lg:hidden fixed top-4 left-4 z-40 p-2 rounded-lg bg-white shadow-card-md border border-surface-200 text-surface-600 hover:text-surface-900 transition-colors"
+        className="lg:hidden fixed top-4 left-4 z-40 p-2 rounded-lg med-glass border border-white/[0.08] text-silver-400 hover:text-white transition-colors"
         aria-label="Open navigation menu"
         aria-expanded={mobileOpen}
       >
@@ -225,14 +225,14 @@ export function Sidebar({ clinicName, userEmail, userRole }: SidebarProps) {
         <>
           {/* Backdrop */}
           <div
-            className="lg:hidden fixed inset-0 z-40 bg-surface-900/50 backdrop-blur-sm"
+            className="lg:hidden fixed inset-0 z-40 bg-black/60 backdrop-blur-sm"
             onClick={() => setMobileOpen(false)}
             aria-hidden="true"
           />
 
           {/* Drawer */}
           <aside
-            className="lg:hidden fixed inset-y-0 left-0 z-50 w-72 bg-white shadow-card-lg flex flex-col animate-slide-up"
+            className="lg:hidden fixed inset-y-0 left-0 z-50 w-72 bg-obsidian-100 border-r border-white/[0.06] flex flex-col animate-slide-up"
             aria-label="Mobile sidebar"
           >
             <SidebarContent

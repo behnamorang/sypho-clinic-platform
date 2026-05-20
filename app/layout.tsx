@@ -6,19 +6,19 @@
  * Security headers and CSP are injected via middleware, not here.
  */
 
-import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import type { Metadata, Viewport } from 'next';
 
 export const metadata: Metadata = {
   title: {
-    template: '%s | Sypho',
-    default: 'Sypho — Clinic Booking & Scheduling',
+    template: '%s | Sypho Med',
+    default: 'Sypho Med — Autonomous Clinic Operations',
   },
   description:
-    'GDPR-compliant clinic booking and scheduling SaaS for EU healthcare providers.',
+    'Premium autonomous operating system for high-performance clinics. Voice AI, unified inbox, and intelligent scheduling.',
   robots: {
-    index: false,    // Private SaaS — do not index by default
-    follow: false,
+    index: true,
+    follow: true,
   },
   referrer: 'strict-origin-when-cross-origin',
 };
@@ -55,7 +55,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
           rel="stylesheet"
         />
       </head>
-      <body className="font-sans">
+      <body className="bg-[#050506] text-white antialiased font-sans">
         {children}
       </body>
     </html>

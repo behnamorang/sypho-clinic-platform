@@ -297,6 +297,20 @@ export interface PatientConsentRow {
   created_at:           string;
 }
 
+/** Represents a row in the `leads` table (marketing consultation captures). */
+export interface LeadRow {
+  id:             string;
+  full_name:      string;
+  email:          string;
+  phone:          string;
+  clinic_name:    string;
+  location:       string;
+  booking_volume: string;
+  pain_points:    string[];
+  created_at:     string;
+  updated_at:     string;
+}
+
 /** Represents a row in the `audit_logs` table. Immutable. */
 export interface AuditLogRow {
   id:                string;
@@ -363,6 +377,10 @@ export type AuditLogInsert = Omit<AuditLogRow, 'id' | 'created_at'> & {
   id?: string | undefined;
 };
 
+export type LeadInsert = Omit<LeadRow, 'id' | 'created_at' | 'updated_at'> & {
+  id?: string | undefined;
+};
+
 // ---------------------------------------------------------------------------
 // UPDATE TYPES — Only updatable fields (excludes immutable fields).
 //
@@ -393,6 +411,10 @@ export type AppointmentTypeUpdate = OptionalWithUndefined<Omit<AppointmentTypeRo
 
 export type AppointmentUpdate = OptionalWithUndefined<Omit<AppointmentRow,
   'id' | 'clinic_id' | 'ends_at' | 'created_at' | 'updated_at'
+>>;
+
+export type LeadUpdate = OptionalWithUndefined<Omit<LeadRow,
+  'id' | 'created_at' | 'updated_at'
 >>;
 
 // ---------------------------------------------------------------------------
@@ -449,6 +471,12 @@ export type Database = {
         Row:           AuditLogRow;
         Insert:        AuditLogInsert;
         Update:        Record<string, never>; // Immutable — no updates allowed
+        Relationships: [];
+      };
+      leads: {
+        Row:           LeadRow;
+        Insert:        LeadInsert;
+        Update:        LeadUpdate;
         Relationships: [];
       };
     };
