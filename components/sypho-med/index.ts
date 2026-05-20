@@ -30,3 +30,5 @@ export { MarketingPlaceholderPage } from '@/components/sypho-med/marketing/marke
 export type { MarketingPlaceholderPageProps } from '@/components/sypho-med/marketing/marketing-placeholder-page';
 
 export { MarketingSiteHeader } from '@/components/sypho-med/marketing/marketing-site-header';
+
+export { PricingModule } from '@/components/sypho-med/pricing/pricing-module';

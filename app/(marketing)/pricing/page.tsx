@@ -1,26 +1,25 @@
 /**
  * @file app/(marketing)/pricing/page.tsx
- * @description Premium single-tier pricing — placeholder.
+ * @description Premium single-tier pricing — Sypho Professional with dynamic AI add-ons.
  */
 
 import type { Metadata } from 'next';
-import { MarketingPlaceholderPage } from '@/components/sypho-med/marketing/marketing-placeholder-page';
+import { PricingModule } from '@/components/sypho-med/pricing/pricing-module';
 
 export const metadata: Metadata = {
   title: 'Pricing',
   description:
-    'Transparent, premium pricing for high-performance clinics. One tier designed for autonomous operations at scale.',
+    'Sypho Professional — single-tier clinic operations pricing for UK (£249/mo) and Oman/GCC (99 OMR/mo) with premium AI upgrades.',
+  openGraph: {
+    title: 'Sypho Med Pricing',
+    description: 'One premium plan. Autonomous clinic infrastructure.',
+    type: 'website',
+  },
 };
 
 /**
  * Pricing route — `/pricing`
  */
 export default function PricingPage() {
-  return (
-    <MarketingPlaceholderPage
-      eyebrow="Pricing"
-      headline="One premium tier. Zero compromise."
-      description="A single, clinic-grade plan built for autonomous reception, unified CRM, and Cal.com-grade scheduling — priced for elite operators who value clarity over complexity."
-    />
-  );
+  return <PricingModule />;
 }
