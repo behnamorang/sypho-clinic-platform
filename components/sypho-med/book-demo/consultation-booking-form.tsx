@@ -27,6 +27,7 @@ import {
   step3Schema,
 } from '@/lib/sypho-med/book-demo-schemas';
 import { saveConsultationLead } from '@/lib/sypho-med/lead-storage';
+import { submitConsultationLeadToSupabase } from '@/lib/sypho-med/submit-consultation-lead';
 
 const STEPS = [
   { id: 1, label: 'Profile' },
@@ -141,6 +142,23 @@ export function ConsultationBookingForm() {
     if (!validateStep()) return;
 
     setIsSubmitting(true);
+
+    try {
+      const result = await submitConsultationLeadToSupabase(form);
+      if (!result.success) {
+        console.error(
+          '[ConsultationBookingForm] Lead sync failed; continuing to demo:',
+          result.error,
+        );
+      }
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Unknown submission error';
+      console.error(
+        '[ConsultationBookingForm] Lead sync threw; continuing to demo:',
+        message,
+      );
+    }
+
     saveConsultationLead(form);
 
     await new Promise((resolve) => window.setTimeout(resolve, 2200));
