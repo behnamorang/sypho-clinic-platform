@@ -32,9 +32,6 @@ export function saveConsultationLead(data: ConsultationLeadFormData): void {
 }
 
 /**
- * Reads the stored lead profile, if present.
- */
-/**
  * Maps lead location to the closest demo clinic preset.
  */
 export function leadLocationToClinicPreset(

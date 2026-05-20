@@ -72,7 +72,8 @@ function MockDashboardInner({ onExitDemo }: MockDashboardProps) {
             <ClinicPresetSwitcher />
             <div className="hidden sm:flex items-center gap-3">
               <span className="text-xs text-silver-500 truncate">
-                {preset.city} · {preset.timezone}
+                {preset.city} · {preset.timezone} · {preset.currencySymbol}
+                {preset.id === 'muscat' ? ' OMR' : preset.id === 'london' ? ' GBP' : ''}
               </span>
               <MedButton variant="ghost" size="sm" onClick={onExitDemo}>
                 <ArrowLeft className="w-4 h-4" aria-hidden="true" />

@@ -17,6 +17,10 @@ import {
   CLINIC_PRESET_ORDER,
   getClinicPreset,
 } from '@/lib/sypho-med/demo/clinic-presets';
+import {
+  generateRileyReply,
+  RILEY_REPLY_DELAY_MS,
+} from '@/lib/sypho-med/demo/riley-chat';
 import type {
   ClinicPresetId,
   DemoActivity,
@@ -39,6 +43,7 @@ export interface DemoContextValue {
   selectedThreadId: string | null;
   localActivities: DemoActivity[];
   localMessages: Record<string, DemoInboxMessage[]>;
+  isRileyTyping: boolean;
   setClinicId: (id: ClinicPresetId) => void;
   setActiveView: (view: DemoViewId) => void;
   movePipelineCard: (cardId: string, toColumnId: PipelineColumnId) => void;
@@ -50,6 +55,7 @@ export interface DemoContextValue {
   resetBooking: () => void;
   setSelectedThreadId: (id: string | null) => void;
   sendInboxReply: (threadId: string, body: string) => void;
+  sendPatientInquiryWithRileyReply: (threadId: string, body: string) => void;
   applyRileySuggestion: (index: number) => void;
 }
 
@@ -104,6 +110,7 @@ export function DemoProvider({
   const [localMessages, setLocalMessages] = useState<Record<string, DemoInboxMessage[]>>(
     () => cloneMessagesFromPreset(initialClinicId),
   );
+  const [isRileyTyping, setIsRileyTyping] = useState(false);
 
   const preset = useMemo(() => getClinicPreset(clinicId), [clinicId]);
 
@@ -125,6 +132,7 @@ export function DemoProvider({
       setLocalActivities([]);
       setLocalMessages(cloneMessagesFromPreset(id));
       setSelectedThreadId(next.inboxThreads[0]?.id ?? null);
+      setIsRileyTyping(false);
       resetBookingState(id);
     },
     [clinicId, resetBookingState],
@@ -194,6 +202,52 @@ export function DemoProvider({
     setLocalActivities((prev) => [activity, ...prev].slice(0, 8));
   }, []);
 
+  const sendPatientInquiryWithRileyReply = useCallback(
+    (threadId: string, body: string) => {
+      const trimmed = body.trim();
+      if (!trimmed || isRileyTyping) return;
+
+      const patientMsg: DemoInboxMessage = {
+        id: `msg-p-${Date.now()}`,
+        sender: 'patient',
+        body: trimmed,
+        time: 'Now',
+      };
+
+      setLocalMessages((prev) => ({
+        ...prev,
+        [threadId]: [...(prev[threadId] ?? []), patientMsg],
+      }));
+      setIsRileyTyping(true);
+
+      const currentPreset = getClinicPreset(clinicId);
+      const rileyBody = generateRileyReply(trimmed, currentPreset);
+
+      window.setTimeout(() => {
+        const rileyMsg: DemoInboxMessage = {
+          id: `msg-r-${Date.now()}`,
+          sender: 'riley',
+          body: rileyBody,
+          time: 'Now',
+        };
+        setLocalMessages((prev) => ({
+          ...prev,
+          [threadId]: [...(prev[threadId] ?? []), rileyMsg],
+        }));
+        setIsRileyTyping(false);
+
+        const activity: DemoActivity = {
+          id: `riley-reply-${Date.now()}`,
+          message: 'Riley responded via WhatsApp concierge',
+          time: 'Just now',
+          category: 'ai',
+        };
+        setLocalActivities((prev) => [activity, ...prev].slice(0, 8));
+      }, RILEY_REPLY_DELAY_MS);
+    },
+    [clinicId, isRileyTyping],
+  );
+
   const applyRileySuggestion = useCallback(
     (index: number) => {
       const suggestion = preset.rileySuggestions[index];
@@ -223,6 +277,7 @@ export function DemoProvider({
       selectedThreadId,
       localActivities,
       localMessages,
+      isRileyTyping,
       setClinicId,
       setActiveView,
       movePipelineCard,
@@ -234,6 +289,7 @@ export function DemoProvider({
       resetBooking,
       setSelectedThreadId,
       sendInboxReply,
+      sendPatientInquiryWithRileyReply,
       applyRileySuggestion,
     }),
     [
@@ -249,11 +305,13 @@ export function DemoProvider({
       selectedThreadId,
       localActivities,
       localMessages,
+      isRileyTyping,
       setClinicId,
       movePipelineCard,
       confirmBooking,
       resetBooking,
       sendInboxReply,
+      sendPatientInquiryWithRileyReply,
       applyRileySuggestion,
     ],
   );

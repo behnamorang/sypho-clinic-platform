@@ -8,8 +8,10 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Sparkles, X } from 'lucide-react';
+import { getClinicPreset } from '@/lib/sypho-med/demo/clinic-presets';
 import {
   getConsultationLead,
+  leadLocationToClinicPreset,
   type StoredConsultationLead,
 } from '@/lib/sypho-med/lead-storage';
 
@@ -28,6 +30,16 @@ export function DemoWelcomeBanner() {
     }
   }, []);
 
+  const currencyLabel =
+    lead !== null
+      ? (() => {
+          const preset = getClinicPreset(leadLocationToClinicPreset(lead.location));
+          if (preset.id === 'muscat') return 'OMR';
+          if (preset.id === 'london') return 'GBP';
+          return preset.currencySymbol;
+        })()
+      : null;
+
   return (
     <AnimatePresence>
       {visible && lead !== null && (
@@ -40,10 +52,16 @@ export function DemoWelcomeBanner() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3 flex items-start gap-3">
             <Sparkles className="w-4 h-4 text-neon-400 shrink-0 mt-0.5" aria-hidden="true" />
             <p className="text-xs sm:text-sm text-silver-300 flex-1 leading-relaxed">
+              Welcome,{' '}
+              <span className="text-white font-medium">{lead.fullName}</span>
+              {' '}| Custom Workspace Generated for{' '}
               <span className="text-white font-medium">{lead.clinicName}</span>
-              {' '}workspace ready — profile logged for{' '}
-              <span className="text-neon-400/90">{lead.fullName}</span>.
-              Explore the live environment below.
+              {currencyLabel !== null && (
+                <span className="text-silver-500">
+                  {' '}
+                  · {currencyLabel} pricing active
+                </span>
+              )}
             </p>
             <button
               type="button"

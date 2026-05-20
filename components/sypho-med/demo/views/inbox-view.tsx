@@ -5,7 +5,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Bot,
@@ -25,12 +25,14 @@ export function InboxView() {
     preset,
     selectedThreadId,
     localMessages,
+    isRileyTyping,
     setSelectedThreadId,
-    sendInboxReply,
+    sendPatientInquiryWithRileyReply,
     applyRileySuggestion,
   } = useDemo();
 
   const [reply, setReply] = useState('');
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const threads = preset.inboxThreads;
   const activeThreadId = selectedThreadId ?? threads[0]?.id ?? null;
@@ -41,9 +43,13 @@ export function InboxView() {
 
   const activeThread = threads.find((t) => t.id === activeThreadId);
 
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages.length, isRileyTyping]);
+
   const handleSend = () => {
-    if (!activeThreadId || !reply.trim()) return;
-    sendInboxReply(activeThreadId, reply);
+    if (!activeThreadId || !reply.trim() || isRileyTyping) return;
+    sendPatientInquiryWithRileyReply(activeThreadId, reply);
     setReply('');
   };
 
@@ -105,7 +111,9 @@ export function InboxView() {
               </span>
               <div>
                 <p className="text-sm font-medium text-white">{activeThread.patientName}</p>
-                <p className="text-[10px] text-silver-500">WhatsApp · {preset.city}</p>
+                <p className="text-[10px] text-silver-500">
+                  WhatsApp · {preset.city} · Riley AI active
+                </p>
               </div>
             </div>
           )}
@@ -144,6 +152,32 @@ export function InboxView() {
                 </motion.div>
               ))}
             </AnimatePresence>
+
+            {isRileyTyping && (
+              <motion.div
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex justify-end"
+                aria-live="polite"
+                aria-label="Riley is typing"
+              >
+                <div className="max-w-[85%] rounded-2xl px-4 py-3 bg-neon-500/10 border border-neon-400/20 rounded-tr-sm">
+                  <span className="flex items-center gap-2 text-[10px] text-neon-400 mb-1.5">
+                    <Bot className="w-3 h-3" aria-hidden="true" />
+                    Riley
+                  </span>
+                  <span className="flex items-center gap-1.5 text-xs text-silver-400">
+                    <span className="inline-flex gap-1">
+                      <span className="w-1.5 h-1.5 rounded-full bg-neon-400/80 animate-bounce [animation-delay:0ms]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-neon-400/80 animate-bounce [animation-delay:150ms]" />
+                      <span className="w-1.5 h-1.5 rounded-full bg-neon-400/80 animate-bounce [animation-delay:300ms]" />
+                    </span>
+                    typing…
+                  </span>
+                </div>
+              </motion.div>
+            )}
+            <div ref={messagesEndRef} />
           </div>
 
           <div className="p-3 border-t border-white/[0.06] flex gap-2">
@@ -151,11 +185,27 @@ export function InboxView() {
               type="text"
               value={reply}
               onChange={(e) => setReply(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
-              placeholder="Type a reply…"
-              className="flex-1 h-10 px-3 rounded-xl bg-obsidian-200/80 border border-white/[0.08] text-sm text-white placeholder:text-silver-600 focus:outline-none focus:ring-2 focus:ring-neon-500/40"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+              disabled={isRileyTyping}
+              placeholder={
+                isRileyTyping
+                  ? 'Riley is composing a reply…'
+                  : 'Simulate a patient WhatsApp inquiry…'
+              }
+              className="flex-1 h-10 px-3 rounded-xl bg-obsidian-200/80 border border-white/[0.08] text-sm text-white placeholder:text-silver-600 focus:outline-none focus:ring-2 focus:ring-neon-500/40 disabled:opacity-50"
             />
-            <MedButton variant="primary" size="sm" onClick={handleSend} aria-label="Send message">
+            <MedButton
+              variant="primary"
+              size="sm"
+              onClick={handleSend}
+              disabled={isRileyTyping || !reply.trim()}
+              aria-label="Send message"
+            >
               <Send className="w-4 h-4" aria-hidden="true" />
             </MedButton>
           </div>
@@ -169,7 +219,9 @@ export function InboxView() {
             </span>
             <div>
               <h3 className="text-sm font-medium text-white">Riley</h3>
-              <p className="text-[10px] text-silver-500">Autonomous Voice AI · Receptionist</p>
+              <p className="text-[10px] text-silver-500">
+                Autonomous concierge · {preset.currencySymbol} pricing
+              </p>
             </div>
           </div>
           <ul className="space-y-2">
@@ -178,7 +230,8 @@ export function InboxView() {
                 <button
                   type="button"
                   onClick={() => applyRileySuggestion(i)}
-                  className="w-full flex items-start gap-2 p-2.5 rounded-xl text-left text-xs text-silver-300 hover:bg-neon-500/10 hover:text-white border border-transparent hover:border-neon-400/20 transition-all group"
+                  disabled={isRileyTyping}
+                  className="w-full flex items-start gap-2 p-2.5 rounded-xl text-left text-xs text-silver-300 hover:bg-neon-500/10 hover:text-white border border-transparent hover:border-neon-400/20 transition-all group disabled:opacity-40"
                 >
                   <Zap
                     className="w-3.5 h-3.5 text-neon-400 shrink-0 mt-0.5 opacity-70 group-hover:opacity-100"
