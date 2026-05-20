@@ -55,7 +55,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
           rel="stylesheet"
         />
       </head>
-      <body className="font-sans bg-obsidian text-white">
+      <body className="bg-[#050506] text-white font-sans antialiased">
         {children}
       </body>
     </html>

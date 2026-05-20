@@ -1,5 +1,5 @@
 /**
- * @file app/(marketing)/book-demo/page.tsx
+ * @file app/book-demo/page.tsx
  * @description Multi-step private consultation booking — high-converting lead capture.
  */
 

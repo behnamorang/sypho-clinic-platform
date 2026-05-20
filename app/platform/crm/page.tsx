@@ -1,5 +1,5 @@
 /**
- * @file app/(marketing)/platform/crm/page.tsx
+ * @file app/platform/crm/page.tsx
  * @description Platform CRM feature deep dive — Medical CRM and pipeline management.
  */
 

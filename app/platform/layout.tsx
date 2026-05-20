@@ -1,5 +1,5 @@
 /**
- * @file app/(marketing)/platform/layout.tsx
+ * @file app/platform/layout.tsx
  * @description Layout segment for Platform feature deep-dive pages.
  */
 

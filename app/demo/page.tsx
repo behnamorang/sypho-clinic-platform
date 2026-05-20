@@ -1,5 +1,5 @@
 /**
- * @file app/(marketing)/demo/page.tsx
+ * @file app/demo/page.tsx
  * @description Dedicated instant demo workspace — public mock dashboard entry.
  */
 

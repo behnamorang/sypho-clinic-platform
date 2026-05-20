@@ -1,5 +1,5 @@
 /**
- * @file app/(marketing)/solutions/aesthetic-clinics/page.tsx
+ * @file app/solutions/aesthetic-clinics/page.tsx
  * @description Vertical solution page for premium aesthetic and wellness centers.
  */
 

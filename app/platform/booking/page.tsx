@@ -1,5 +1,5 @@
 /**
- * @file app/(marketing)/platform/booking/page.tsx
+ * @file app/platform/booking/page.tsx
  * @description Platform booking feature deep dive — intelligent scheduling engine.
  */
 

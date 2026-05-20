@@ -1,5 +1,5 @@
 /**
- * @file app/(marketing)/pricing/page.tsx
+ * @file app/pricing/page.tsx
  * @description Premium single-tier pricing — Sypho Professional with dynamic AI add-ons.
  */
 
