@@ -6,8 +6,8 @@
  * Security headers and CSP are injected via middleware, not here.
  */
 
-import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import type { Metadata, Viewport } from 'next';
 
 export const metadata: Metadata = {
   title: {
@@ -55,7 +55,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
           rel="stylesheet"
         />
       </head>
-      <body className="bg-[#050506] text-white font-sans antialiased">
+      <body className="bg-[#050506] text-white antialiased font-sans">
         {children}
       </body>
     </html>
