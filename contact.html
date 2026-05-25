@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Contact Maison Sypho — enquiries, directions, and concierge support for your visit." />
+  <title>Contact | Maison Sypho</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="sypho-design-system.css" />
+</head>
+<body class="sypho-body sypho-page">
+  <header class="sypho-header">
+    <div class="sypho-header__inner">
+      <a href="index.html" class="sypho-logo">
+        <span class="sypho-logo__brand">Maison Sypho</span>
+        <span class="sypho-logo__tagline">Integrative Medicine</span>
+      </a>
+      <nav class="sypho-nav" aria-label="Main navigation">
+        <a href="index.html" class="sypho-nav__link">Home</a>
+        <a href="services.html" class="sypho-nav__link">Treatments</a>
+        <a href="locations.html" class="sypho-nav__link">Locations</a>
+        <a href="practitioners.html" class="sypho-nav__link">Practitioners</a>
+        <a href="contact.html" class="sypho-nav__link sypho-nav__link--active">Contact</a>
+        <a href="book.html" class="sypho-btn sypho-btn--gold">Book now</a>
+      </nav>
+      <button type="button" class="sypho-nav-toggle" data-sypho-nav-toggle aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+    <nav class="sypho-nav-mobile" data-sypho-nav-mobile aria-label="Mobile navigation">
+      <a href="index.html" class="sypho-nav__link">Home</a>
+      <a href="services.html" class="sypho-nav__link">Treatments</a>
+      <a href="locations.html" class="sypho-nav__link">Locations</a>
+      <a href="practitioners.html" class="sypho-nav__link">Practitioners</a>
+      <a href="contact.html" class="sypho-nav__link sypho-nav__link--active">Contact</a>
+      <a href="book.html" class="sypho-btn sypho-btn--gold">Book now</a>
+    </nav>
+  </header>
+
+  <main class="sypho-main">
+    <section class="sypho-section sypho-section--hero">
+      <div class="sypho-container">
+        <div class="sypho-grid sypho-grid--2" style="align-items: start">
+          <div>
+            <p class="sypho-eyebrow">Contact</p>
+            <h1 class="sypho-heading-display">We are here for you</h1>
+            <p class="sypho-lead sypho-mt-8">
+              For appointments, reach us online first. For clinical questions or special arrangements, send a message — we respond within one business day.
+            </p>
+            <div class="sypho-stack sypho-mt-8">
+              <div>
+                <p class="sypho-eyebrow">Email</p>
+                <a href="mailto:contact@maisonsypho.be" class="sypho-heading-3" style="font-size: var(--sypho-font-size-xl)">contact@maisonsypho.be</a>
+              </div>
+              <div>
+                <p class="sypho-eyebrow">Telephone &amp; SMS</p>
+                <a href="tel:+32498504153" class="sypho-heading-3" style="font-size: var(--sypho-font-size-xl)">+32 498 50 41 53</a>
+              </div>
+              <div>
+                <p class="sypho-eyebrow">Hours</p>
+                <p class="sypho-text-muted">Monday – Saturday, 9:00 – 19:00 (by appointment)</p>
+              </div>
+            </div>
+            <a href="book.html" class="sypho-btn sypho-btn--gold sypho-btn--lg sypho-mt-8">Book online instead</a>
+          </div>
+
+          <div class="sypho-panel">
+            <div class="sypho-panel__header">
+              <h2 class="sypho-heading-3">Send a message</h2>
+            </div>
+            <div class="sypho-panel__body">
+              <form class="sypho-stack sypho-stack--lg" id="contact-form" action="#" method="post">
+                <div class="sypho-form-grid sypho-form-grid--2">
+                  <div class="sypho-field">
+                    <label class="sypho-label" for="contact-first">First name</label>
+                    <input class="sypho-input" type="text" id="contact-first" name="firstName" required />
+                  </div>
+                  <div class="sypho-field">
+                    <label class="sypho-label" for="contact-last">Last name</label>
+                    <input class="sypho-input" type="text" id="contact-last" name="lastName" required />
+                  </div>
+                </div>
+                <div class="sypho-field">
+                  <label class="sypho-label" for="contact-email">Email</label>
+                  <input class="sypho-input" type="email" id="contact-email" name="email" required />
+                </div>
+                <div class="sypho-field">
+                  <label class="sypho-label" for="contact-subject">Subject</label>
+                  <select class="sypho-select" id="contact-subject" name="subject">
+                    <option value="booking">Booking enquiry</option>
+                    <option value="treatment">Treatment question</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+                <div class="sypho-field">
+                  <label class="sypho-label" for="contact-message">Message</label>
+                  <textarea class="sypho-textarea" id="contact-message" name="message" required></textarea>
+                </div>
+                <div class="sypho-checkbox-row">
+                  <input type="checkbox" id="contact-gdpr" name="gdpr" required />
+                  <label for="contact-gdpr">I consent to Maison Sypho processing my data to respond to this enquiry (GDPR).</label>
+                </div>
+                <button type="submit" class="sypho-btn sypho-btn--primary sypho-btn--block">Send message</button>
+              </form>
+              <p class="sypho-text-muted sypho-mt-4 sypho-hidden" id="contact-success" role="status">
+                Thank you. Your message has been noted — our team will reply shortly.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="sypho-footer">
+    <div class="sypho-container">
+      <div class="sypho-footer__bottom" style="margin-top: 0; border: none">
+        <span>&copy; Maison Sypho · EU data residency</span>
+        <a href="index.html">Home</a>
+      </div>
+    </div>
+  </footer>
+  <script>
+    (function () {
+      var t = document.querySelector('[data-sypho-nav-toggle]');
+      var m = document.querySelector('[data-sypho-nav-mobile]');
+      if (t && m) t.addEventListener('click', function () { m.classList.toggle('sypho-nav-mobile--open'); });
+
+      var form = document.getElementById('contact-form');
+      var success = document.getElementById('contact-success');
+      if (form) {
+        form.addEventListener('submit', function (e) {
+          e.preventDefault();
+          form.classList.add('sypho-hidden');
+          if (success) success.classList.remove('sypho-hidden');
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

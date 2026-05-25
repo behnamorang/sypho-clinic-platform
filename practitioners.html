@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Meet the practitioners at Maison Sypho — senior clinicians in osteopathy, bodywork, and traditional medicine." />
+  <title>Practitioners | Maison Sypho</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="sypho-design-system.css" />
+</head>
+<body class="sypho-body sypho-page">
+  <header class="sypho-header">
+    <div class="sypho-header__inner">
+      <a href="index.html" class="sypho-logo">
+        <span class="sypho-logo__brand">Maison Sypho</span>
+        <span class="sypho-logo__tagline">Integrative Medicine</span>
+      </a>
+      <nav class="sypho-nav" aria-label="Main navigation">
+        <a href="index.html" class="sypho-nav__link">Home</a>
+        <a href="services.html" class="sypho-nav__link">Treatments</a>
+        <a href="locations.html" class="sypho-nav__link">Locations</a>
+        <a href="practitioners.html" class="sypho-nav__link sypho-nav__link--active">Practitioners</a>
+        <a href="contact.html" class="sypho-nav__link">Contact</a>
+        <a href="book.html" class="sypho-btn sypho-btn--gold">Book now</a>
+      </nav>
+      <button type="button" class="sypho-nav-toggle" data-sypho-nav-toggle aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+    <nav class="sypho-nav-mobile" data-sypho-nav-mobile aria-label="Mobile navigation">
+      <a href="index.html" class="sypho-nav__link">Home</a>
+      <a href="services.html" class="sypho-nav__link">Treatments</a>
+      <a href="locations.html" class="sypho-nav__link">Locations</a>
+      <a href="practitioners.html" class="sypho-nav__link sypho-nav__link--active">Practitioners</a>
+      <a href="contact.html" class="sypho-nav__link">Contact</a>
+      <a href="book.html" class="sypho-btn sypho-btn--gold">Book now</a>
+    </nav>
+  </header>
+
+  <main class="sypho-main">
+    <section class="sypho-section sypho-section--hero">
+      <div class="sypho-container sypho-text-center">
+        <p class="sypho-eyebrow">Our team</p>
+        <h1 class="sypho-heading-display">Masters of their craft</h1>
+        <p class="sypho-lead" style="margin-inline: auto">
+          Each practitioner is selected for depth of training, clinical rigour, and the quiet presence our patients value.
+        </p>
+      </div>
+    </section>
+
+    <section class="sypho-section" style="padding-top: 0">
+      <div class="sypho-container">
+        <div class="sypho-grid sypho-grid--3">
+          <article class="sypho-card">
+            <div class="sypho-card__media" style="background: var(--sypho-cream-deep); min-height: 14rem"></div>
+            <div class="sypho-card__body sypho-text-center">
+              <h2 class="sypho-heading-3">Dr. Marie-Claire Dubois</h2>
+              <p class="sypho-eyebrow" style="margin-top: var(--sypho-space-2)">Founder · Ostéothaï</p>
+              <p class="sypho-text-muted sypho-mt-4">
+                Twenty years integrating osteopathy and Thai bodywork. Leads the Mérode practice.
+              </p>
+            </div>
+          </article>
+          <article class="sypho-card">
+            <div class="sypho-card__media" style="background: var(--sypho-cream-deep); min-height: 14rem"></div>
+            <div class="sypho-card__body sypho-text-center">
+              <h2 class="sypho-heading-3">Sophie Laurent</h2>
+              <p class="sypho-eyebrow" style="margin-top: var(--sypho-space-2)">Shiatsu · Chi Nei Tsang</p>
+              <p class="sypho-text-muted sypho-mt-4">
+                Specialist in visceral and meridian therapies. Available at Uccle Pluridys.
+              </p>
+            </div>
+          </article>
+          <article class="sypho-card">
+            <div class="sypho-card__media" style="background: var(--sypho-cream-deep); min-height: 14rem"></div>
+            <div class="sypho-card__body sypho-text-center">
+              <h2 class="sypho-heading-3">Thomas van Berg</h2>
+              <p class="sypho-eyebrow" style="margin-top: var(--sypho-space-2)">Acupuncture · Craniosacral</p>
+              <p class="sypho-text-muted sypho-mt-4">
+                Classical Chinese medicine and cranial work for complex chronic presentations.
+              </p>
+            </div>
+          </article>
+        </div>
+        <p class="sypho-text-muted sypho-text-center sypho-mt-8">
+          Practitioner availability is shown during online booking. For specific requests, please <a href="contact.html" style="color: var(--sypho-gold-dark)">contact us</a>.
+        </p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="sypho-footer">
+    <div class="sypho-container">
+      <div class="sypho-footer__bottom" style="margin-top: 0; border: none">
+        <span>&copy; Maison Sypho</span>
+        <a href="book.html">Book online</a>
+      </div>
+    </div>
+  </footer>
+  <script>
+    (function () {
+      var t = document.querySelector('[data-sypho-nav-toggle]');
+      var m = document.querySelector('[data-sypho-nav-mobile]');
+      if (t && m) t.addEventListener('click', function () { m.classList.toggle('sypho-nav-mobile--open'); });
+    })();
+  </script>
+</body>
+</html>
