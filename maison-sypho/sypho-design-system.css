@@ -1,0 +1,943 @@
+/**
+ * Sypho Design System — Maison Sypho
+ * Luxury medical clinic theme (CSS variables + semantic components)
+ * @version 1.0.0
+ */
+
+/* ---------------------------------------------------------------------------
+ * Design tokens
+ * --------------------------------------------------------------------------- */
+
+:root {
+  /* Brand palette */
+  --sypho-ink: #1a1816;
+  --sypho-ink-soft: #2d2926;
+  --sypho-cream: #f8f5f0;
+  --sypho-cream-deep: #efe9e0;
+  --sypho-white: #fffefb;
+  --sypho-gold: #b8956a;
+  --sypho-gold-light: #d4bc94;
+  --sypho-gold-dark: #8f7352;
+  --sypho-sage: #6d7d6a;
+  --sypho-sage-light: #8fa38c;
+  --sypho-muted: #6b6560;
+  --sypho-muted-light: #9a948d;
+  --sypho-border: rgba(26, 24, 22, 0.1);
+  --sypho-border-strong: rgba(26, 24, 22, 0.18);
+  --sypho-shadow: 0 4px 24px rgba(26, 24, 22, 0.06);
+  --sypho-shadow-lg: 0 12px 48px rgba(26, 24, 22, 0.1);
+  --sypho-overlay: rgba(26, 24, 22, 0.45);
+
+  /* Semantic */
+  --sypho-bg: var(--sypho-cream);
+  --sypho-surface: var(--sypho-white);
+  --sypho-text: var(--sypho-ink);
+  --sypho-text-secondary: var(--sypho-muted);
+  --sypho-accent: var(--sypho-gold);
+  --sypho-accent-hover: var(--sypho-gold-dark);
+  --sypho-focus-ring: var(--sypho-gold-light);
+
+  /* Typography */
+  --sypho-font-display: "Cormorant Garamond", "Georgia", serif;
+  --sypho-font-body: "DM Sans", system-ui, -apple-system, sans-serif;
+  --sypho-font-size-xs: 0.75rem;
+  --sypho-font-size-sm: 0.875rem;
+  --sypho-font-size-base: 1rem;
+  --sypho-font-size-lg: 1.125rem;
+  --sypho-font-size-xl: 1.25rem;
+  --sypho-font-size-2xl: 1.5rem;
+  --sypho-font-size-3xl: 2rem;
+  --sypho-font-size-4xl: 2.75rem;
+  --sypho-font-size-5xl: 3.5rem;
+  --sypho-line-tight: 1.15;
+  --sypho-line-normal: 1.5;
+  --sypho-line-relaxed: 1.65;
+  --sypho-letter-wide: 0.12em;
+
+  /* Spacing scale */
+  --sypho-space-1: 0.25rem;
+  --sypho-space-2: 0.5rem;
+  --sypho-space-3: 0.75rem;
+  --sypho-space-4: 1rem;
+  --sypho-space-5: 1.25rem;
+  --sypho-space-6: 1.5rem;
+  --sypho-space-8: 2rem;
+  --sypho-space-10: 2.5rem;
+  --sypho-space-12: 3rem;
+  --sypho-space-16: 4rem;
+  --sypho-space-20: 5rem;
+  --sypho-space-24: 6rem;
+
+  /* Layout */
+  --sypho-radius-sm: 0.375rem;
+  --sypho-radius: 0.5rem;
+  --sypho-radius-lg: 0.75rem;
+  --sypho-radius-xl: 1rem;
+  --sypho-radius-2xl: 1.5rem;
+  --sypho-container: 72rem;
+  --sypho-container-narrow: 42rem;
+  --sypho-header-height: 4.5rem;
+  --sypho-transition: 180ms ease;
+  --sypho-transition-slow: 320ms ease;
+}
+
+/* ---------------------------------------------------------------------------
+ * Reset & base
+ * --------------------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+}
+
+body.sypho-body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--sypho-font-body);
+  font-size: var(--sypho-font-size-base);
+  line-height: var(--sypho-line-normal);
+  color: var(--sypho-text);
+  background-color: var(--sypho-bg);
+  -webkit-font-smoothing: antialiased;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+*:focus-visible {
+  outline: 2px solid var(--sypho-focus-ring);
+  outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Layout
+ * --------------------------------------------------------------------------- */
+
+.sypho-page {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.sypho-main {
+  flex: 1;
+}
+
+.sypho-container {
+  width: 100%;
+  max-width: var(--sypho-container);
+  margin-inline: auto;
+  padding-inline: var(--sypho-space-6);
+}
+
+.sypho-container--narrow {
+  max-width: var(--sypho-container-narrow);
+}
+
+.sypho-section {
+  padding-block: var(--sypho-space-16);
+}
+
+.sypho-section--hero {
+  padding-block: var(--sypho-space-20) var(--sypho-space-16);
+}
+
+@media (min-width: 768px) {
+  .sypho-section {
+    padding-block: var(--sypho-space-20);
+  }
+
+  .sypho-section--hero {
+    padding-block: var(--sypho-space-24) var(--sypho-space-20);
+  }
+}
+
+.sypho-grid {
+  display: grid;
+  gap: var(--sypho-space-6);
+}
+
+.sypho-grid--2 {
+  grid-template-columns: 1fr;
+}
+
+.sypho-grid--3 {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 640px) {
+  .sypho-grid--2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 768px) {
+  .sypho-grid--3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.sypho-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sypho-space-4);
+}
+
+.sypho-stack--lg {
+  gap: var(--sypho-space-8);
+}
+
+.sypho-cluster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sypho-space-4);
+}
+
+/* ---------------------------------------------------------------------------
+ * Typography
+ * --------------------------------------------------------------------------- */
+
+.sypho-eyebrow {
+  font-size: var(--sypho-font-size-xs);
+  font-weight: 500;
+  letter-spacing: var(--sypho-letter-wide);
+  text-transform: uppercase;
+  color: var(--sypho-gold-dark);
+}
+
+.sypho-heading-display {
+  font-family: var(--sypho-font-display);
+  font-size: clamp(2.25rem, 5vw, var(--sypho-font-size-5xl));
+  font-weight: 400;
+  line-height: var(--sypho-line-tight);
+  letter-spacing: -0.02em;
+  color: var(--sypho-ink);
+}
+
+.sypho-heading-1 {
+  font-family: var(--sypho-font-display);
+  font-size: clamp(1.75rem, 3.5vw, var(--sypho-font-size-4xl));
+  font-weight: 500;
+  line-height: var(--sypho-line-tight);
+  color: var(--sypho-ink);
+}
+
+.sypho-heading-2 {
+  font-family: var(--sypho-font-display);
+  font-size: clamp(1.5rem, 2.5vw, var(--sypho-font-size-3xl));
+  font-weight: 500;
+  line-height: var(--sypho-line-tight);
+  color: var(--sypho-ink);
+}
+
+.sypho-heading-3 {
+  font-family: var(--sypho-font-display);
+  font-size: var(--sypho-font-size-2xl);
+  font-weight: 500;
+  line-height: var(--sypho-line-tight);
+  color: var(--sypho-ink);
+}
+
+.sypho-lead {
+  font-size: var(--sypho-font-size-lg);
+  line-height: var(--sypho-line-relaxed);
+  color: var(--sypho-text-secondary);
+  max-width: 38rem;
+}
+
+.sypho-text-muted {
+  color: var(--sypho-text-secondary);
+  font-size: var(--sypho-font-size-sm);
+}
+
+.sypho-text-center {
+  text-align: center;
+}
+
+.sypho-text-balance {
+  text-wrap: balance;
+}
+
+/* ---------------------------------------------------------------------------
+ * Header & navigation
+ * --------------------------------------------------------------------------- */
+
+.sypho-header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  height: var(--sypho-header-height);
+  background: rgba(248, 245, 240, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--sypho-border);
+}
+
+.sypho-header__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 100%;
+  max-width: var(--sypho-container);
+  margin-inline: auto;
+  padding-inline: var(--sypho-space-6);
+}
+
+.sypho-logo {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  line-height: 1.1;
+}
+
+.sypho-logo__brand {
+  font-family: var(--sypho-font-display);
+  font-size: var(--sypho-font-size-xl);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--sypho-ink);
+}
+
+.sypho-logo__tagline {
+  font-size: 0.625rem;
+  letter-spacing: var(--sypho-letter-wide);
+  text-transform: uppercase;
+  color: var(--sypho-gold-dark);
+}
+
+.sypho-nav {
+  display: none;
+  align-items: center;
+  gap: var(--sypho-space-8);
+}
+
+.sypho-nav__link {
+  font-size: var(--sypho-font-size-sm);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--sypho-muted);
+  transition: color var(--sypho-transition);
+}
+
+.sypho-nav__link:hover,
+.sypho-nav__link--active {
+  color: var(--sypho-ink);
+}
+
+.sypho-nav-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  padding: 0;
+  border: 1px solid var(--sypho-border);
+  border-radius: var(--sypho-radius);
+  background: var(--sypho-surface);
+  cursor: pointer;
+}
+
+.sypho-nav-mobile {
+  display: none;
+  flex-direction: column;
+  gap: var(--sypho-space-2);
+  padding: var(--sypho-space-4) var(--sypho-space-6);
+  background: var(--sypho-surface);
+  border-bottom: 1px solid var(--sypho-border);
+}
+
+.sypho-nav-mobile--open {
+  display: flex;
+}
+
+.sypho-nav-mobile .sypho-nav__link {
+  padding-block: var(--sypho-space-3);
+  border-bottom: 1px solid var(--sypho-border);
+}
+
+@media (min-width: 900px) {
+  .sypho-nav {
+    display: flex;
+  }
+
+  .sypho-nav-toggle {
+    display: none;
+  }
+
+  .sypho-nav-mobile {
+    display: none !important;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Buttons
+ * --------------------------------------------------------------------------- */
+
+.sypho-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sypho-space-2);
+  padding: var(--sypho-space-3) var(--sypho-space-6);
+  font-size: var(--sypho-font-size-sm);
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  border-radius: var(--sypho-radius);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition:
+    background-color var(--sypho-transition),
+    border-color var(--sypho-transition),
+    color var(--sypho-transition),
+    transform var(--sypho-transition);
+}
+
+.sypho-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.sypho-btn--primary {
+  background: var(--sypho-ink);
+  color: var(--sypho-cream);
+  border-color: var(--sypho-ink);
+}
+
+.sypho-btn--primary:hover:not(:disabled) {
+  background: var(--sypho-ink-soft);
+  border-color: var(--sypho-ink-soft);
+}
+
+.sypho-btn--gold {
+  background: var(--sypho-gold);
+  color: var(--sypho-white);
+  border-color: var(--sypho-gold);
+}
+
+.sypho-btn--gold:hover:not(:disabled) {
+  background: var(--sypho-gold-dark);
+  border-color: var(--sypho-gold-dark);
+}
+
+.sypho-btn--outline {
+  background: transparent;
+  color: var(--sypho-ink);
+  border-color: var(--sypho-border-strong);
+}
+
+.sypho-btn--outline:hover:not(:disabled) {
+  border-color: var(--sypho-ink);
+  background: var(--sypho-surface);
+}
+
+.sypho-btn--ghost {
+  background: transparent;
+  color: var(--sypho-muted);
+  border-color: transparent;
+}
+
+.sypho-btn--ghost:hover:not(:disabled) {
+  color: var(--sypho-ink);
+}
+
+.sypho-btn--lg {
+  padding: var(--sypho-space-4) var(--sypho-space-8);
+  font-size: var(--sypho-font-size-base);
+}
+
+.sypho-btn--block {
+  width: 100%;
+}
+
+/* ---------------------------------------------------------------------------
+ * Cards & surfaces
+ * --------------------------------------------------------------------------- */
+
+.sypho-card {
+  background: var(--sypho-surface);
+  border: 1px solid var(--sypho-border);
+  border-radius: var(--sypho-radius-xl);
+  box-shadow: var(--sypho-shadow);
+  overflow: hidden;
+  transition:
+    box-shadow var(--sypho-transition-slow),
+    border-color var(--sypho-transition);
+}
+
+.sypho-card:hover {
+  box-shadow: var(--sypho-shadow-lg);
+  border-color: var(--sypho-border-strong);
+}
+
+.sypho-card__body {
+  padding: var(--sypho-space-6);
+}
+
+.sypho-card__media {
+  aspect-ratio: 4 / 3;
+  background: var(--sypho-cream-deep);
+  object-fit: cover;
+  width: 100%;
+}
+
+.sypho-card--selectable {
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+}
+
+.sypho-card--selected {
+  border-color: var(--sypho-gold);
+  box-shadow: 0 0 0 1px var(--sypho-gold), var(--sypho-shadow);
+}
+
+.sypho-panel {
+  background: var(--sypho-surface);
+  border: 1px solid var(--sypho-border);
+  border-radius: var(--sypho-radius-2xl);
+  box-shadow: var(--sypho-shadow-lg);
+}
+
+.sypho-panel__header {
+  padding: var(--sypho-space-8) var(--sypho-space-8) var(--sypho-space-4);
+  border-bottom: 1px solid var(--sypho-border);
+}
+
+.sypho-panel__body {
+  padding: var(--sypho-space-8);
+}
+
+/* ---------------------------------------------------------------------------
+ * Hero
+ * --------------------------------------------------------------------------- */
+
+.sypho-hero {
+  position: relative;
+  overflow: hidden;
+}
+
+.sypho-hero__content {
+  max-width: 36rem;
+}
+
+.sypho-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sypho-space-4);
+  margin-top: var(--sypho-space-8);
+}
+
+.sypho-hero__visual {
+  display: none;
+}
+
+@media (min-width: 900px) {
+  .sypho-hero--split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--sypho-space-12);
+    align-items: center;
+  }
+
+  .sypho-hero__visual {
+    display: block;
+    border-radius: var(--sypho-radius-2xl);
+    background: linear-gradient(145deg, var(--sypho-cream-deep), var(--sypho-sage-light));
+    min-height: 22rem;
+    border: 1px solid var(--sypho-border);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Forms
+ * --------------------------------------------------------------------------- */
+
+.sypho-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sypho-space-2);
+}
+
+.sypho-label {
+  font-size: var(--sypho-font-size-sm);
+  font-weight: 500;
+  color: var(--sypho-ink-soft);
+}
+
+.sypho-input,
+.sypho-select,
+.sypho-textarea {
+  width: 100%;
+  padding: var(--sypho-space-3) var(--sypho-space-4);
+  background: var(--sypho-surface);
+  border: 1px solid var(--sypho-border-strong);
+  border-radius: var(--sypho-radius);
+  transition: border-color var(--sypho-transition);
+}
+
+.sypho-input:focus,
+.sypho-select:focus,
+.sypho-textarea:focus {
+  border-color: var(--sypho-gold);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(184, 149, 106, 0.2);
+}
+
+.sypho-textarea {
+  min-height: 6rem;
+  resize: vertical;
+}
+
+.sypho-checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sypho-space-3);
+  font-size: var(--sypho-font-size-sm);
+  color: var(--sypho-text-secondary);
+}
+
+.sypho-checkbox-row input {
+  margin-top: 0.2rem;
+  accent-color: var(--sypho-gold);
+}
+
+.sypho-form-grid {
+  display: grid;
+  gap: var(--sypho-space-5);
+}
+
+@media (min-width: 640px) {
+  .sypho-form-grid--2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Booking wizard
+ * --------------------------------------------------------------------------- */
+
+.sypho-booking {
+  padding-block: var(--sypho-space-10);
+}
+
+.sypho-progress {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--sypho-space-2);
+  margin-bottom: var(--sypho-space-8);
+  padding-bottom: var(--sypho-space-6);
+  border-bottom: 1px solid var(--sypho-border);
+  overflow-x: auto;
+}
+
+.sypho-progress__step {
+  flex: 1;
+  min-width: 4rem;
+  text-align: center;
+  font-size: var(--sypho-font-size-xs);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--sypho-muted-light);
+  position: relative;
+}
+
+.sypho-progress__step::after {
+  content: "";
+  display: block;
+  width: 100%;
+  height: 2px;
+  margin-top: var(--sypho-space-2);
+  background: var(--sypho-cream-deep);
+  border-radius: 1px;
+}
+
+.sypho-progress__step--active {
+  color: var(--sypho-ink);
+  font-weight: 600;
+}
+
+.sypho-progress__step--active::after,
+.sypho-progress__step--done::after {
+  background: var(--sypho-gold);
+}
+
+.sypho-progress__step--done {
+  color: var(--sypho-gold-dark);
+}
+
+.sypho-booking-step {
+  display: none;
+  animation: sypho-fade-in var(--sypho-transition-slow);
+}
+
+.sypho-booking-step--active {
+  display: block;
+}
+
+.sypho-slot-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5.5rem, 1fr));
+  gap: var(--sypho-space-3);
+}
+
+.sypho-slot {
+  padding: var(--sypho-space-3);
+  font-size: var(--sypho-font-size-sm);
+  font-weight: 500;
+  text-align: center;
+  background: var(--sypho-surface);
+  border: 1px solid var(--sypho-border);
+  border-radius: var(--sypho-radius);
+  cursor: pointer;
+  transition: all var(--sypho-transition);
+}
+
+.sypho-slot:hover:not(:disabled) {
+  border-color: var(--sypho-gold);
+}
+
+.sypho-slot--selected {
+  background: var(--sypho-ink);
+  color: var(--sypho-cream);
+  border-color: var(--sypho-ink);
+}
+
+.sypho-slot:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.sypho-service-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-top: var(--sypho-space-3);
+  font-size: var(--sypho-font-size-sm);
+  color: var(--sypho-text-secondary);
+}
+
+.sypho-price {
+  font-family: var(--sypho-font-display);
+  font-size: var(--sypho-font-size-xl);
+  color: var(--sypho-gold-dark);
+}
+
+.sypho-calendar-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sypho-space-4);
+}
+
+.sypho-calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--sypho-space-1);
+  text-align: center;
+  font-size: var(--sypho-font-size-sm);
+}
+
+.sypho-calendar-day {
+  padding: var(--sypho-space-2);
+  border-radius: var(--sypho-radius-sm);
+  cursor: pointer;
+  border: none;
+  background: transparent;
+}
+
+.sypho-calendar-day:hover:not(:disabled) {
+  background: var(--sypho-cream-deep);
+}
+
+.sypho-calendar-day--selected {
+  background: var(--sypho-ink);
+  color: var(--sypho-cream);
+}
+
+.sypho-calendar-day:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+.sypho-summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding-block: var(--sypho-space-3);
+  border-bottom: 1px solid var(--sypho-border);
+  font-size: var(--sypho-font-size-sm);
+}
+
+.sypho-summary-row:last-child {
+  border-bottom: none;
+}
+
+.sypho-alert {
+  padding: var(--sypho-space-4);
+  border-radius: var(--sypho-radius);
+  font-size: var(--sypho-font-size-sm);
+  margin-bottom: var(--sypho-space-6);
+}
+
+.sypho-alert--error {
+  background: #fef2f2;
+  color: #991b1b;
+  border: 1px solid #fecaca;
+}
+
+.sypho-alert--success {
+  background: #f0fdf4;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.sypho-booking-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sypho-space-4);
+  margin-top: var(--sypho-space-8);
+  padding-top: var(--sypho-space-6);
+  border-top: 1px solid var(--sypho-border);
+}
+
+/* ---------------------------------------------------------------------------
+ * Badges & misc
+ * --------------------------------------------------------------------------- */
+
+.sypho-badge {
+  display: inline-block;
+  padding: var(--sypho-space-1) var(--sypho-space-3);
+  font-size: var(--sypho-font-size-xs);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--sypho-cream-deep);
+  color: var(--sypho-gold-dark);
+  border-radius: 999px;
+}
+
+.sypho-divider {
+  height: 1px;
+  background: var(--sypho-border);
+  margin-block: var(--sypho-space-8);
+}
+
+.sypho-icon-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: var(--sypho-cream-deep);
+  color: var(--sypho-gold-dark);
+}
+
+/* ---------------------------------------------------------------------------
+ * Footer
+ * --------------------------------------------------------------------------- */
+
+.sypho-footer {
+  margin-top: auto;
+  padding-block: var(--sypho-space-12);
+  background: var(--sypho-ink);
+  color: var(--sypho-cream);
+}
+
+.sypho-footer a {
+  color: var(--sypho-gold-light);
+  transition: color var(--sypho-transition);
+}
+
+.sypho-footer a:hover {
+  color: var(--sypho-cream);
+}
+
+.sypho-footer__grid {
+  display: grid;
+  gap: var(--sypho-space-8);
+}
+
+@media (min-width: 768px) {
+  .sypho-footer__grid {
+    grid-template-columns: 2fr 1fr 1fr;
+  }
+}
+
+.sypho-footer__bottom {
+  margin-top: var(--sypho-space-10);
+  padding-top: var(--sypho-space-6);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: var(--sypho-font-size-xs);
+  color: var(--sypho-muted-light);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: var(--sypho-space-4);
+}
+
+/* ---------------------------------------------------------------------------
+ * Utilities
+ * --------------------------------------------------------------------------- */
+
+.sypho-hidden {
+  display: none !important;
+}
+
+.sypho-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.sypho-mt-4 { margin-top: var(--sypho-space-4); }
+.sypho-mt-8 { margin-top: var(--sypho-space-8); }
+.sypho-mb-0 { margin-bottom: 0; }
+
+@keyframes sypho-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Book your appointment at Maison Sypho — choose location, treatment, and time online." />
+  <title>Book an appointment | Maison Sypho</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="sypho-design-system.css" />
+</head>
+<body class="sypho-body sypho-page">
+  <header class="sypho-header">
+    <div class="sypho-header__inner">
+      <a href="index.html" class="sypho-logo">
+        <span class="sypho-logo__brand">Maison Sypho</span>
+        <span class="sypho-logo__tagline">Integrative Medicine</span>
+      </a>
+      <nav class="sypho-nav" aria-label="Main navigation">
+        <a href="index.html" class="sypho-nav__link">Home</a>
+        <a href="services.html" class="sypho-nav__link">Treatments</a>
+        <a href="locations.html" class="sypho-nav__link">Locations</a>
+        <a href="practitioners.html" class="sypho-nav__link">Practitioners</a>
+        <a href="contact.html" class="sypho-nav__link">Contact</a>
+        <a href="book.html" class="sypho-btn sypho-btn--gold">Book now</a>
+      </nav>
+      <button type="button" class="sypho-nav-toggle" data-sypho-nav-toggle aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+    </div>
+    <nav class="sypho-nav-mobile" data-sypho-nav-mobile aria-label="Mobile navigation">
+      <a href="index.html" class="sypho-nav__link">Home</a>
+      <a href="services.html" class="sypho-nav__link">Treatments</a>
+      <a href="locations.html" class="sypho-nav__link">Locations</a>
+      <a href="practitioners.html" class="sypho-nav__link">Practitioners</a>
+      <a href="contact.html" class="sypho-nav__link">Contact</a>
+      <a href="book.html" class="sypho-btn sypho-btn--gold">Book now</a>
+    </nav>
+  </header>
+
+  <main class="sypho-main sypho-booking" id="sypho-booking-root">
+    <div class="sypho-container sypho-container--narrow">
+      <div class="sypho-text-center sypho-mb-0" style="margin-bottom: var(--sypho-space-8)">
+        <p class="sypho-eyebrow">Online reservations</p>
+        <h1 class="sypho-heading-1">Book your session</h1>
+        <p class="sypho-text-muted">Secure, GDPR-compliant booking in five simple steps.</p>
+      </div>
+
+      <div class="sypho-panel">
+        <div class="sypho-panel__header">
+          <div class="sypho-progress" id="sypho-booking-progress" role="list" aria-label="Booking progress"></div>
+        </div>
+        <div class="sypho-panel__body">
+          <div id="sypho-booking-steps"></div>
+        </div>
+      </div>
+
+      <p class="sypho-text-muted sypho-text-center sypho-mt-8">
+        Prefer to speak with us? Call <a href="tel:+32498504153" style="color: var(--sypho-gold-dark)">+32 498 50 41 53</a>
+        or email <a href="mailto:contact@maisonsypho.be" style="color: var(--sypho-gold-dark)">contact@maisonsypho.be</a>
+      </p>
+    </div>
+  </main>
+
+  <footer class="sypho-footer">
+    <div class="sypho-container">
+      <div class="sypho-footer__bottom" style="margin-top: 0; border: none; padding-top: 0">
+        <span>&copy; Maison Sypho</span>
+        <span>Powered by <strong>Sypho</strong></span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/booking-engine.js"></script>
+</body>
+</html>
