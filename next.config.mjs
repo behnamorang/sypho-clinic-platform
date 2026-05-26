@@ -54,7 +54,13 @@ const nextConfig = {
    * No external image sources by default; add domains as integrations grow.
    */
   images: {
-    domains: [],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+        pathname: '/**',
+      },
+    ],
   },
 };
 

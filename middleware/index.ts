@@ -92,6 +92,8 @@ const PUBLIC_BYPASS_PREFIXES = [
 /** Pattern for public patient-facing booking pages: /{slug}/booking/* */
 const BOOKING_PAGE_PATTERN = /^\/[a-z0-9-]+\/booking(\/.*)?$/;
 
+const DEMO_ROUTE_PREFIX = '/demo';
+
 // ---------------------------------------------------------------------------
 // Geo detection
 // ---------------------------------------------------------------------------
@@ -227,6 +229,12 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     });
     injectSecurityHeaders(bookingResponse);
     return bookingResponse;
+  }
+
+  if (pathname === DEMO_ROUTE_PREFIX || pathname.startsWith(`${DEMO_ROUTE_PREFIX}/`)) {
+    const demoResponse = NextResponse.next({ request });
+    injectSecurityHeaders(demoResponse);
+    return demoResponse;
   }
 
   // ---------------------------------------------------------------------------
