@@ -115,10 +115,22 @@ const config: Config = {
           500: '#64748b',
           600: '#475569',
         },
+
+        /** Lumière clinic showcase — warm luxury palette */
+        clinic: {
+          cream:   '#f8f5f0',
+          pearl:   '#fffefb',
+          ink:     '#1a1816',
+          slate:   '#2d2926',
+          gold:    '#b8956a',
+          goldLt:  '#d4bc94',
+        },
       },
 
       fontFamily: {
-        sans: ['Inter', 'system-ui', 'sans-serif'],
+        sans:          ['Inter', 'system-ui', 'sans-serif'],
+        display:       ['var(--font-cormorant)', 'Cormorant Garamond', 'Georgia', 'serif'],
+        'clinic-sans':   ['var(--font-dm-sans)', 'DM Sans', 'system-ui', 'sans-serif'],
       },
 
       borderRadius: {
@@ -142,6 +154,9 @@ const config: Config = {
         'float-slow': 'floatSlow 8s ease-in-out infinite',
         'float-slower': 'floatSlower 12s ease-in-out infinite',
         'shimmer': 'shimmer 3s linear infinite',
+        'marquee':    'marquee 40s linear infinite',
+        'float':      'float 6s ease-in-out infinite',
+        'pulse-soft': 'pulseSoft 3s ease-in-out infinite',
       },
 
       keyframes: {
@@ -176,6 +191,18 @@ const config: Config = {
         shimmer: {
           '0%': { backgroundPosition: '200% center' },
           '100%': { backgroundPosition: '-200% center' },
+        },
+        marquee: {
+          '0%':   { transform: 'translateX(0)' },
+          '100%': { transform: 'translateX(-50%)' },
+        },
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%':       { transform: 'translateY(-8px)' },
+        },
+        pulseSoft: {
+          '0%, 100%': { opacity: '0.4' },
+          '50%':       { opacity: '0.8' },
         },
       },
 

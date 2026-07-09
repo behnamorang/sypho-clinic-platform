@@ -92,6 +92,9 @@ const PUBLIC_BYPASS_PREFIXES = [
 /** Pattern for public patient-facing booking pages: /{slug}/booking/* */
 const BOOKING_PAGE_PATTERN = /^\/[a-z0-9-]+\/booking(\/.*)?$/;
 
+/** Public clinic design showcase — no auth guard. */
+const SHOWCASE_ROUTE_PREFIX = '/showcase';
+
 // ---------------------------------------------------------------------------
 // Geo detection
 // ---------------------------------------------------------------------------
@@ -227,6 +230,12 @@ export async function middleware(request: NextRequest): Promise<NextResponse> {
     });
     injectSecurityHeaders(bookingResponse);
     return bookingResponse;
+  }
+
+  if (pathname === SHOWCASE_ROUTE_PREFIX || pathname.startsWith(`${SHOWCASE_ROUTE_PREFIX}/`)) {
+    const showcaseResponse = NextResponse.next({ request });
+    injectSecurityHeaders(showcaseResponse);
+    return showcaseResponse;
   }
 
   // ---------------------------------------------------------------------------
